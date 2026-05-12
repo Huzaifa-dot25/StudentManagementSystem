@@ -118,11 +118,14 @@
                                 <td class="fw-bold text-success">@item.Amount.ToString("N2")</td>
                                 <td class="text-danger small">@item.Arrears.ToString("N2")</td>
                                 <td class="fw-bold">@((item.Amount + item.Arrears).ToString("N2"))</td>
-                                <td class="pe-4 text-center">
-                                     <button class="btn btn-arrears btn-sm" onclick="openArrearsModal('@item.ChallanID', @item.Arrears)">
-                                         <i class="fas fa-plus me-1"></i>Add Arrears
-                                     </button>
-                                 </td>
+                                 <td class="pe-4 text-center">
+                                      <a asp-action="PrintChallan" asp-route-id="@item.ChallanID" target="_blank" class="btn btn-outline-info btn-sm">
+                                          <i class="fas fa-print me-1"></i>Print
+                                      </a>
+                                      <button class="btn btn-arrears btn-sm" onclick="openArrearsModal('@item.ChallanID', @item.Arrears)">
+                                          <i class="fas fa-plus me-1"></i>Add Arrears
+                                      </button>
+                                  </td>
                             </tr>
                         }
                         @if (!Model.Any())

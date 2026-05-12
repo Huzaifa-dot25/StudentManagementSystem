@@ -1,5 +1,6 @@
+@model IEnumerable<StudentManagementSystem.Models.StudentReportCard>
 @{
-    ViewData["Title"] = "Print Result";
+    ViewData["Title"] = "Primary Print Result";
     var type        = ViewBag.Type as string ?? "EndOfYear";
     var sessions    = ViewBag.Sessions as List<string> ?? new List<string>();
     var classes     = ViewBag.Classes  as List<string> ?? new List<string>();
@@ -17,19 +18,27 @@
     var (icon, label, desc) = titles.ContainsKey(type) ? titles[type] : titles["EndOfYear"];
 }
 
-<div class="card border-0 shadow-sm">
+<div class="card border-0 shadow-sm no-print mb-4">
     <!-- Header -->
-    <div class="card-header bg-warning text-white py-3 d-flex align-items-center gap-3">
-        <i class="fas @icon fs-4"></i>
-        <div>
-            <h5 class="mb-0 fw-bold">@label</h5>
-            <small class="opacity-75">@desc</small>
+    <div class="card-header bg-warning text-white py-3 d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-3">
+            <i class="fas @icon fs-4"></i>
+            <div>
+                <h5 class="mb-0 fw-bold">Primary - @label</h5>
+                <small class="opacity-75">@desc</small>
+            </div>
         </div>
+        @if (Model != null && Model.Any())
+        {
+            <button onclick="window.print()" class="btn btn-light btn-sm px-4 fw-bold">
+                <i class="fas fa-print me-2"></i>Print All Result Cards
+            </button>
+        }
     </div>
 
     <div class="card-body p-4">
         <!-- Filter Form -->
-        <form asp-action="PrintResult" method="get" class="mb-4">
+        <form asp-action="PrintResult" method="get" class="mb-0">
             <input type="hidden" name="type" value="@type" />
             <div class="row g-3 align-items-end">
                 <div class="col-md-3">
@@ -82,59 +91,91 @@
                 </div>
             </div>
         </form>
+    </div>
+</div>
 
-        <!-- Type-specific content panel -->
-        @if (type == "EndOfYear")
+<!-- Print-ready Report Cards -->
+@if (Model != null && Model.Any())
+{
+    <div class="row g-4" id="printableArea">
+        @foreach (var card in Model)
         {
-            <div class="alert alert-warning border-0 d-flex align-items-center gap-3">
-                <i class="fas fa-trophy fs-4"></i>
-                <div>
-                    <strong>End of Year Result Cards</strong> — Select a session and class above, then click Search to load annual result cards for printing.
+            <div class="col-lg-6 mb-4 card-container">
+                <div class="card border-0 shadow-sm h-100 report-card">
+                    <div class="card-header bg-warning text-dark py-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 fw-bold">@card.Name (@(card.RollNo ?? "No Roll#"))</h6>
+                            <span class="badge bg-white text-dark">@card.Term - @type</span>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-sm mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Subject</th>
+                                    <th class="text-center">Total</th>
+                                    <th class="text-center">Obtained</th>
+                                    <th class="text-center">Grade</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var sub in card.Subjects)
+                                {
+                                    <tr>
+                                        <td class="ps-3">@sub.Subject</td>
+                                        <td class="text-center">@sub.TotalMarks</td>
+                                        <td class="text-center fw-bold">@sub.ObtainedMarks</td>
+                                        <td class="text-center">
+                                            @{
+                                                var pct = sub.TotalMarks > 0 ? (sub.ObtainedMarks / sub.TotalMarks * 100) : 0;
+                                                var grade = pct >= 90 ? "A+" : pct >= 80 ? "A" : pct >= 70 ? "B" : pct >= 60 ? "C" : pct >= 50 ? "D" : "F";
+                                            }
+                                            <span class="fw-bold">@grade</span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot class="table-light fw-bold">
+                                <tr>
+                                    <td class="ps-3">Overall Total</td>
+                                    <td class="text-center">@card.TotalMarks</td>
+                                    <td class="text-center">@card.TotalObtained</td>
+                                    <td class="text-center">@card.Grade (@card.Percentage%)</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    <div class="card-footer bg-white border-top-0 py-4 d-none d-print-block">
+                        <div class="d-flex justify-content-between align-items-end">
+                            <div class="text-center border-top pt-2" style="width: 120px;"><small>Teacher</small></div>
+                            <div class="text-center border-top pt-2" style="width: 120px;"><small>Principal</small></div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="text-center py-5 text-muted">
-                <i class="fas fa-trophy fa-4x mb-3 opacity-25"></i>
-                <p class="fs-5">Select session and class to generate End of Year result cards.</p>
-            </div>
-        }
-        else if (type == "Monthly")
-        {
-            <div class="alert alert-warning border-0 d-flex align-items-center gap-3">
-                <i class="fas fa-calendar-day fs-4"></i>
-                <div>
-                    <strong>Monthly Result</strong> — Select session, class and term to print monthly assessment results.
-                </div>
-            </div>
-            <div class="text-center py-5 text-muted">
-                <i class="fas fa-calendar-day fa-4x mb-3 opacity-25"></i>
-                <p class="fs-5">Select filters to generate Monthly result cards.</p>
-            </div>
-        }
-        else if (type == "MarksSheet")
-        {
-            <div class="alert alert-warning border-0 d-flex align-items-center gap-3">
-                <i class="fas fa-table-list fs-4"></i>
-                <div>
-                    <strong>Marks Sheet</strong> — Prints a consolidated subject-wise marks sheet for the selected class and term.
-                </div>
-            </div>
-            <div class="text-center py-5 text-muted">
-                <i class="fas fa-table-list fa-4x mb-3 opacity-25"></i>
-                <p class="fs-5">Select filters to generate the Marks Sheet.</p>
-            </div>
-        }
-        else if (type == "CommentsSheet")
-        {
-            <div class="alert alert-warning border-0 d-flex align-items-center gap-3">
-                <i class="fas fa-comment-dots fs-4"></i>
-                <div>
-                    <strong>Comments Sheet</strong> — Prints teacher remarks and comments for each student in the selected class.
-                </div>
-            </div>
-            <div class="text-center py-5 text-muted">
-                <i class="fas fa-comment-dots fa-4x mb-3 opacity-25"></i>
-                <p class="fs-5">Select filters to generate the Comments Sheet.</p>
             </div>
         }
     </div>
-</div>
+}
+else if (Context.Request.Query.ContainsKey("session"))
+{
+    <div class="text-center py-5 text-muted bg-white rounded shadow-sm">
+        <i class="fas fa-search fa-3x mb-3 opacity-25"></i>
+        <h5>No results found for the selected criteria.</h5>
+    </div>
+}
+else
+{
+    <div class="text-center py-5 text-muted bg-white rounded shadow-sm">
+        <i class="fas @icon fa-4x mb-3 opacity-25"></i>
+        <h5>Select filters to generate report cards.</h5>
+    </div>
+}
+
+<style>
+    @@media print {
+        .card-container { width: 50% !important; float: left; padding: 10px; page-break-inside: avoid; }
+        .report-card { border: 1px solid #000 !important; }
+        .bg-warning { background-color: #ffc107 !important; color: #000 !important; -webkit-print-color-adjust: exact; }
+        .table-light { background-color: #eee !important; }
+    }
+</style>

@@ -62,6 +62,42 @@ namespace StudentManagementSystem.Controllers
             return View(await students.ToListAsync());
         }
 
+        // GET: Students/PrintList
+        public async Task<IActionResult> PrintList(string? searchString)
+        {
+            var students = _context.Students
+                .Include(s => s.Admission)
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                students = students.Where(s => s.Name.Contains(searchString) 
+                                            || s.StudentID.ToString() == searchString
+                                            || (s.Admission != null && s.Admission.RollNo != null && s.Admission.RollNo.Contains(searchString)));
+            }
+
+            return View(await students.OrderBy(s => s.Name).ToListAsync());
+        }
+
+        // GET: Students/PrintProfile/5
+        public async Task<IActionResult> PrintProfile(int? id)
+        {
+            if (id == null) return NotFound();
+
+            var student = await _context.Students
+                .Include(s => s.Parent)
+                .Include(s => s.AdditionalInfo)
+                .Include(s => s.Admission)
+                .Include(s => s.Transport)
+                .Include(s => s.InternationalDetail)
+                .Include(s => s.MedicalDetail)
+                .FirstOrDefaultAsync(m => m.StudentID == id);
+
+            if (student == null) return NotFound();
+
+            return View(student);
+        }
+
         // GET: Students/Details/5
         public async Task<IActionResult> Details(int? id)
         {

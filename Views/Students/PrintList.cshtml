@@ -1,0 +1,70 @@
+@model IEnumerable<StudentManagementSystem.Models.Student>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Students List - Print View";
+}
+
+<div class="print-container p-4 bg-white">
+    <div class="text-center mb-4">
+        <h2 class="fw-bold text-uppercase border-bottom pb-2">Student Management System</h2>
+        <h4 class="text-muted">Registered Students List</h4>
+        <p class="small">Generated on: @DateTime.Now.ToString("dd MMM yyyy, hh:mm tt")</p>
+    </div>
+
+    <table class="table table-bordered align-middle">
+        <thead class="bg-light">
+            <tr>
+                <th style="width: 80px;">Reg No</th>
+                <th>Student Name</th>
+                <th>Father Name</th>
+                <th>Gender</th>
+                <th>Class - Section</th>
+                <th>Session</th>
+                <th>Mobile No</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td class="fw-bold">@(item.Admission?.RollNo ?? "N/A")</td>
+                    <td class="fw-bold">@item.Name</td>
+                    <td>@(item.Parent?.FatherName ?? "N/A")</td>
+                    <td>@item.Gender</td>
+                    <td>@(item.Admission?.Class ?? "N/A") - @(item.Admission?.Section ?? "N/A")</td>
+                    <td>@(item.Admission?.Session ?? "N/A")</td>
+                    <td>@(item.MobileNo ?? "N/A")</td>
+                    <td>
+                        <span class="badge @(item.Status == "Active" ? "bg-success" : "bg-secondary")">
+                            @item.Status
+                        </span>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="mt-5 d-flex justify-content-between align-items-end">
+        <div class="text-center border-top pt-2" style="width: 200px;">
+            <small>Admin Signature</small>
+        </div>
+        <div class="text-center border-top pt-2" style="width: 200px;">
+            <small>Principal Signature</small>
+        </div>
+    </div>
+</div>
+
+<div class="text-center mt-4 no-print">
+    <button onclick="window.print()" class="btn btn-primary btn-lg px-5">
+        <i class="fas fa-print me-2"></i> Print Now
+    </button>
+</div>
+
+<style>
+    @@media print {
+        .badge { border: 1px solid #000 !important; color: #000 !important; }
+        .bg-success { background-color: #fff !important; }
+        .bg-secondary { background-color: #fff !important; }
+    }
+</style>

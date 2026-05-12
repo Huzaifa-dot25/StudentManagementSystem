@@ -1,51 +1,239 @@
+@model StudentManagementSystem.Models.StudentDetailReportViewModel
 @{
-    ViewData["Title"] = "Student Detail Report";
+    ViewData["Title"] = "Student Comprehensive Detail Report";
 }
 
-<div class="card border-0 shadow-sm overflow-hidden">
-    <div class="card-header bg-dark text-white py-3">
-        <h5 class="mb-0 fw-bold"><i class="fas fa-info-circle me-2"></i>Student Detail Report Generator</h5>
+<div class="container-fluid py-4">
+    <!-- Search Bar (Hide on Print) -->
+    <div class="card border-0 shadow-sm mb-4 no-print">
+        <div class="card-body p-4">
+            <form asp-action="StudentDetailReport" method="get" class="row g-3 align-items-end">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold small">Search Student by ID</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-id-card text-muted"></i></span>
+                        <input type="number" name="studentId" class="form-control border-start-0" placeholder="Enter Student ID (e.g. 1, 2, 3...)" value="@(Model?.Student?.StudentID)" required>
+                        <button type="submit" class="btn btn-primary px-4">Generate Report</button>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold small">Session Filter (Optional)</label>
+                    <select name="session" class="form-select border-secondary-subtle">
+                        <option value="">-- All Sessions --</option>
+                        @if (ViewBag.Sessions != null)
+                        {
+                            foreach (var s in (List<string>)ViewBag.Sessions)
+                            {
+                                <option value="@s" selected="@(Context.Request.Query["session"].ToString() == s)">@s</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    @if (Model != null)
+                    {
+                        <button type="button" onclick="window.print()" class="btn btn-outline-info w-100">
+                            <i class="fas fa-print me-2"></i>Print Report
+                        </button>
+                    }
+                </div>
+            </form>
+        </div>
     </div>
-    <div class="card-body p-4">
-        <form asp-action="StudentDetailReport" method="get">
-            <div class="row g-4 align-items-end">
-                <div class="col-md-4">
-                    <label class="form-label small fw-bold">Session</label>
-                    <select name="session" class="form-select border-0 bg-light shadow-sm py-2">
-                        <option>-- Select Session --</option>
-                        @foreach (var s in ViewBag.Sessions) { <option value="@s" selected="@(Context.Request.Query["session"].ToString() == s)">@s</option> }
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label small fw-bold">Class</label>
-                    <select name="className" class="form-select border-0 bg-light shadow-sm py-2">
-                        <option>-- Select Class --</option>
-                        @foreach (var c in ViewBag.Classes) { <option value="@c" selected="@(Context.Request.Query["className"].ToString() == c)">@c</option> }
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label small fw-bold">Section <span class="text-danger">*</span></label>
-                    <select name="section" class="form-select border-0 bg-light shadow-sm py-2" required>
-                        <option value="">Select Section</option>
-                        @foreach (var s in ViewBag.Sections) { <option value="@s" selected="@(Context.Request.Query["section"].ToString() == s)">@s</option> }
-                    </select>
-                </div>
-                <div class="col-12 d-flex gap-3 justify-content-end mt-2">
-                    <button type="button" class="btn btn-outline-success rounded-pill px-4">
-                        <i class="fas fa-envelope me-2"></i>Send via Email
-                    </button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-5 shadow">
-                        <i class="fas fa-search me-2"></i>Search Records
-                    </button>
+
+    @if (Model == null)
+    {
+        <div class="text-center py-5 text-muted bg-white rounded shadow-sm">
+            <i class="fas fa-file-invoice fa-4x mb-3 opacity-25"></i>
+            <h3>Student Detail Report</h3>
+            <p>Enter a Student ID above to generate a comprehensive report including profile, fees, and results.</p>
+        </div>
+    }
+    else
+    {
+        <!-- Printable Report Header -->
+        <div class="print-header text-center mb-5 d-none d-print-block">
+            <h2 class="fw-bold text-primary">Student Management System</h2>
+            <h4 class="text-muted">Comprehensive Student Performance & Financial Report</h4>
+            <hr>
+        </div>
+
+        <div class="row g-4">
+            <!-- Left Column: Profile & Stats -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body p-4 text-center">
+                        @if (!string.IsNullOrEmpty(Model.Student.PhotoPath))
+                        {
+                            <img src="@Model.Student.PhotoPath" class="rounded-circle shadow-sm mb-3 border border-5 border-light" style="width: 150px; height: 150px; object-fit: cover;" />
+                        }
+                        else
+                        {
+                            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 150px; height: 150px;">
+                                <i class="fas fa-user fa-5x text-secondary opacity-50"></i>
+                            </div>
+                        }
+                        <h4 class="fw-bold mb-1">@Model.Student.Name</h4>
+                        <p class="text-muted mb-3">Roll No: @(Model.Student.Admission?.RollNo ?? "N/A")</p>
+                        
+                        <div class="row g-2 mb-4">
+                            <div class="col-6">
+                                <div class="p-3 bg-light rounded shadow-sm">
+                                    <div class="small text-muted">Academic</div>
+                                    <div class="fw-bold text-@Model.Results.Count">@Model.OverallGrade (@Model.OverallPercentage%)</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-3 bg-light rounded shadow-sm">
+                                    <div class="small text-muted">Fees</div>
+                                    <div class="fw-bold text-@(Model.TotalFeePending > 0 ? "danger" : "success")">@(Model.TotalFeePending > 0 ? "Pending" : "Cleared")</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-start">
+                            <h6 class="fw-bold border-bottom pb-2 mb-3">Personal Details</h6>
+                            <div class="mb-2"><span class="text-muted small d-block">Father Name:</span> <span class="fw-bold">@(Model.Student.Parent?.FatherName ?? "N/A")</span></div>
+                            <div class="mb-2"><span class="text-muted small d-block">Class / Section:</span> <span class="fw-bold">@(Model.Student.Admission?.Class ?? "N/A") - @(Model.Student.Admission?.Section ?? "N/A")</span></div>
+                            <div class="mb-2"><span class="text-muted small d-block">Mobile:</span> <span class="fw-bold">@(Model.Student.MobileNo ?? "N/A")</span></div>
+                            <div class="mb-2"><span class="text-muted small d-block">Address:</span> <span class="fw-bold small">@(Model.Student.Address ?? "N/A")</span></div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </form>
-    </div>
+
+            <!-- Right Column: Results & Fees -->
+            <div class="col-lg-8">
+                <!-- Academic Performance -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white py-3">
+                        <h5 class="mb-0 fw-bold"><i class="fas fa-graduation-cap me-2"></i>Academic Results</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4">Term/Exam</th>
+                                    <th>Subject</th>
+                                    <th class="text-center">Marks</th>
+                                    <th class="text-center">Grade</th>
+                                    <th class="text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.Results.Any())
+                                {
+                                    foreach (var res in Model.Results)
+                                    {
+                                        var pct = res.TotalMarks > 0 ? (res.ObtainedMarks / res.TotalMarks * 100) : 0;
+                                        <tr>
+                                            <td class="ps-4">
+                                                <div class="fw-bold">@res.Term</div>
+                                                <div class="small text-muted">@res.ExamType</div>
+                                            </td>
+                                            <td class="fw-bold">@res.Subject</td>
+                                            <td class="text-center">@res.ObtainedMarks / @res.TotalMarks</td>
+                                            <td class="text-center">
+                                                <span class="badge bg-info bg-opacity-10 text-info border border-info">@pct.ToString("N0")%</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-@(res.Status == "Present" ? "success" : "danger")">@res.Status</span>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4 text-muted">No academic results found.</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Financial Record -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-success text-white py-3">
+                        <h5 class="mb-0 fw-bold"><i class="fas fa-hand-holding-dollar me-2"></i>Fee Payment History</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4">Challan ID</th>
+                                    <th>Month</th>
+                                    <th>Due Date</th>
+                                    <th class="text-center">Amount</th>
+                                    <th class="text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.FeeHistory.Any())
+                                {
+                                    foreach (var fee in Model.FeeHistory)
+                                    {
+                                        <tr>
+                                            <td class="ps-4 fw-bold">@fee.ChallanID</td>
+                                            <td>@fee.Month</td>
+                                            <td>@fee.DueDate.ToString("dd MMM yyyy")</td>
+                                            <td class="text-center fw-bold">Rs. @((fee.Amount + fee.Arrears).ToString("N0"))</td>
+                                            <td class="text-center">
+                                                <span class="badge bg-@(fee.Status == "Paid" ? "success" : (fee.Status == "Unpaid" ? "danger" : "secondary"))">
+                                                    @fee.Status.ToUpper()
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4 text-muted">No fee history found.</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card-footer bg-white py-3">
+                        <div class="row text-center">
+                            <div class="col-6 border-end">
+                                <div class="text-muted small">Total Paid</div>
+                                <div class="fw-bold text-success fs-5">Rs. @Model.TotalFeePaid.ToString("N0")</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-muted small">Total Pending</div>
+                                <div class="fw-bold text-danger fs-5">Rs. @Model.TotalFeePending.ToString("N0")</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Signature Section (Print Only) -->
+        <div class="mt-5 pt-5 d-none d-print-block">
+            <div class="row text-center">
+                <div class="col-4">
+                    <div class="border-top pt-2 mx-4 small">Class Teacher</div>
+                </div>
+                <div class="col-4">
+                    <div class="border-top pt-2 mx-4 small">Accounts Officer</div>
+                </div>
+                <div class="col-4">
+                    <div class="border-top pt-2 mx-4 small">Principal Signature</div>
+                </div>
+            </div>
+        </div>
+    }
 </div>
 
-<div class="mt-4 card border-0 shadow-sm">
-    <div class="card-body py-5 text-center text-muted">
-        <i class="fas fa-search fa-3x mb-3 opacity-25"></i>
-        <p>Results will appear here after searching</p>
-    </div>
-</div>
+<style>
+    @@media print {
+        .card { border: 1px solid #eee !important; box-shadow: none !important; }
+        .bg-primary { background-color: #0d6efd !important; -webkit-print-color-adjust: exact; }
+        .bg-success { background-color: #198754 !important; -webkit-print-color-adjust: exact; }
+        .badge { border: 1px solid #ccc !important; color: #000 !important; -webkit-print-color-adjust: exact; }
+    }
+</style>

@@ -38,6 +38,21 @@ namespace StudentManagementSystem.Controllers
             return View(await challans.OrderByDescending(c => c.ChallanID).ToListAsync());
         }
 
+        // GET: Fees/PrintChallan/ID
+        public async Task<IActionResult> PrintChallan(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return NotFound();
+
+            var challan = await _context.FeeChallans
+                .Include(f => f.Student).ThenInclude(s => s!.Admission)
+                .Include(f => f.Student).ThenInclude(s => s!.Parent)
+                .FirstOrDefaultAsync(m => m.ChallanID == id);
+
+            if (challan == null) return NotFound();
+
+            return View(challan);
+        }
+
         // GET: Fees/Generate
         public async Task<IActionResult> Generate()
         {

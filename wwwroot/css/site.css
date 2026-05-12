@@ -194,3 +194,30 @@ body {
   background-color: #2c7be5;
   border-color: #2c7be5;
 }
+
+/* Print Styles */
+@media print {
+    .sidebar, .top-bar, .btn, .no-print, hr {
+        display: none !important;
+    }
+    .main-wrapper {
+        margin-left: 0 !important;
+        padding: 0 !important;
+    }
+    .content-body {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    .card {
+        box-shadow: none !important;
+        border: none !important;
+    }
+    .card-header {
+        background-color: #f8f9fa !important;
+        color: #000 !important;
+        border-bottom: 2px solid #000 !important;
+    }
+    body {
+        background-color: #fff !important;
+    }
+}

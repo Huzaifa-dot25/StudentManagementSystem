@@ -139,16 +139,82 @@ namespace StudentManagementSystem.Controllers
             ViewBag.Terms    = await _context.StudentResults.Select(r => r.Term).Distinct().OrderBy(t => t).ToListAsync();
             ViewBag.Type     = string.IsNullOrEmpty(type) ? "EndOfYear" : type;
 
-            return View();
+            var results = await _context.StudentResults
+                .Include(r => r.Student).ThenInclude(s => s!.Admission)
+                .Include(r => r.Student).ThenInclude(s => s!.Parent)
+                .Where(r =>
+                    (string.IsNullOrEmpty(session)   || r.Session == session)   &&
+                    (string.IsNullOrEmpty(className) || r.Class   == className) &&
+                    (string.IsNullOrEmpty(section)   || r.Section == section)   &&
+                    (string.IsNullOrEmpty(term)      || r.Term    == term))
+                .ToListAsync();
+
+            var reportCards = results
+                .GroupBy(r => r.StudentID)
+                .Select(g =>
+                {
+                    var first   = g.First();
+                    var student = first.Student;
+                    return new StudentReportCard
+                    {
+                        StudentID  = g.Key,
+                        Name       = student?.Name ?? "Unknown",
+                        RollNo     = student?.Admission?.RollNo,
+                        Class      = first.Class,
+                        Section    = first.Section,
+                        Session    = first.Session,
+                        Term       = first.Term,
+                        FatherName = student?.Parent?.FatherName,
+                        PhotoPath  = student?.PhotoPath,
+                        Subjects   = g.OrderBy(r => r.Subject).ToList()
+                    };
+                })
+                .OrderBy(c => c.RollNo)
+                .ToList();
+
+            return View(reportCards);
         }
 
-        public async Task<IActionResult> StudentDetailReport(string session, string className, string section)
+        public async Task<IActionResult> StudentDetailReport(int? studentId, string? session)
         {
             ViewBag.Sessions = await _context.Admissions.Select(a => a.Session).Distinct().ToListAsync();
             ViewBag.Classes  = await _context.Admissions.Select(a => a.Class).Distinct().ToListAsync();
             ViewBag.Sections = await _context.Admissions.Select(a => a.Section).Distinct().ToListAsync();
 
-            return View();
+            if (studentId == null)
+            {
+                return View();
+            }
+
+            var student = await _context.Students
+                .Include(s => s.Parent)
+                .Include(s => s.Admission)
+                .Include(s => s.AdditionalInfo)
+                .Include(s => s.MedicalDetail)
+                .Include(s => s.Transport)
+                .FirstOrDefaultAsync(s => s.StudentID == studentId);
+
+            if (student == null) return NotFound();
+
+            var feeHistory = await _context.FeeChallans
+                .Where(f => f.StudentID == studentId)
+                .OrderByDescending(f => f.DueDate)
+                .ToListAsync();
+
+            var results = await _context.StudentResults
+                .Where(r => r.StudentID == studentId && (string.IsNullOrEmpty(session) || r.Session == session))
+                .OrderBy(r => r.Term)
+                .ThenBy(r => r.Subject)
+                .ToListAsync();
+
+            var viewModel = new StudentDetailReportViewModel
+            {
+                Student = student,
+                FeeHistory = feeHistory,
+                Results = results
+            };
+
+            return View(viewModel);
         }
 
         public async Task<IActionResult> StudentResults(int studentId, string? session)

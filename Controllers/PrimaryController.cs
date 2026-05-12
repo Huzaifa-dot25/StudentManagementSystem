@@ -103,7 +103,40 @@ namespace StudentManagementSystem.Controllers
             ViewBag.Terms    = await _context.StudentResults.Select(r => r.Term).Distinct().OrderBy(t => t).ToListAsync();
             ViewBag.Type     = string.IsNullOrEmpty(type) ? "EndOfYear" : type;
 
-            return View();
+            var results = await _context.StudentResults
+                .Include(r => r.Student).ThenInclude(s => s!.Admission)
+                .Include(r => r.Student).ThenInclude(s => s!.Parent)
+                .Where(r =>
+                    (string.IsNullOrEmpty(session)   || r.Session == session)   &&
+                    (string.IsNullOrEmpty(className) || r.Class   == className) &&
+                    (string.IsNullOrEmpty(section)   || r.Section == section)   &&
+                    (string.IsNullOrEmpty(term)      || r.Term    == term))
+                .ToListAsync();
+
+            var reportCards = results
+                .GroupBy(r => r.StudentID)
+                .Select(g =>
+                {
+                    var first   = g.First();
+                    var student = first.Student;
+                    return new StudentReportCard
+                    {
+                        StudentID  = g.Key,
+                        Name       = student?.Name ?? "Unknown",
+                        RollNo     = student?.Admission?.RollNo,
+                        Class      = first.Class,
+                        Section    = first.Section,
+                        Session    = first.Session,
+                        Term       = first.Term,
+                        FatherName = student?.Parent?.FatherName,
+                        PhotoPath  = student?.PhotoPath,
+                        Subjects   = g.OrderBy(r => r.Subject).ToList()
+                    };
+                })
+                .OrderBy(c => c.RollNo)
+                .ToList();
+
+            return View(reportCards);
         }
 
         public IActionResult TeacherAssignment()      => View();

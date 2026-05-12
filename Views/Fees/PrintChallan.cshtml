@@ -1,0 +1,134 @@
+@model StudentManagementSystem.Models.FeeChallan
+@{
+    Layout = null; // No layout for challan to ensure clean print
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Challan - @Model.ChallanID</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        body { background: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 12px; }
+        .challan-wrapper { display: flex; flex-direction: row; gap: 20px; padding: 20px; width: 100%; min-width: 1000px; }
+        .challan-copy { flex: 1; border: 1px dashed #ccc; padding: 15px; position: relative; }
+        .challan-header { text-align: center; border-bottom: 2px solid #000; margin-bottom: 15px; padding-bottom: 10px; }
+        .challan-logo { font-size: 24px; font-weight: bold; color: #1a237e; }
+        .copy-tag { position: absolute; top: 10px; right: 10px; background: #eee; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+        .field-label { color: #666; font-size: 10px; text-transform: uppercase; margin-bottom: 2px; }
+        .field-value { font-weight: bold; border-bottom: 1px solid #eee; margin-bottom: 10px; min-height: 20px; }
+        .fee-table { width: 100%; margin-top: 15px; }
+        .fee-table th { border-bottom: 2px solid #eee; text-align: left; padding: 5px; }
+        .fee-table td { padding: 5px; border-bottom: 1px solid #f9f9f9; }
+        .total-row { background: #f8f9fa; font-weight: bold; }
+        .footer-note { font-size: 9px; color: #888; margin-top: 20px; font-style: italic; }
+        .signatures { margin-top: 30px; display: flex; justify-content: space-between; }
+        .sig-line { border-top: 1px solid #000; width: 80px; text-align: center; font-size: 9px; margin-top: 20px; }
+
+        @@media print {
+            .no-print { display: none !important; }
+            .challan-wrapper { padding: 0; gap: 10px; }
+            .challan-copy { border: 1px solid #000; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="no-print p-3 text-center bg-light border-bottom">
+        <button onclick="window.print()" class="btn btn-primary px-5 shadow-sm fw-bold">
+            <i class="fas fa-print me-2"></i> PRINT CHALLAN
+        </button>
+        <p class="small text-muted mt-2 mb-0">Use A4 landscape for best results.</p>
+    </div>
+
+    <div class="challan-wrapper">
+        @for (int i = 0; i < 3; i++)
+        {
+            string copyName = i == 0 ? "Bank Copy" : (i == 1 ? "School Copy" : "Student Copy");
+            <div class="challan-copy">
+                <span class="copy-tag">@copyName</span>
+                
+                <div class="challan-header">
+                    <div class="challan-logo">SMS ADMIN</div>
+                    <div class="small fw-bold">STUDENT MANAGEMENT SYSTEM</div>
+                    <div class="small text-muted">Branch: Main City Branch, Lahore</div>
+                </div>
+
+                <div class="row g-2">
+                    <div class="col-6">
+                        <div class="field-label">Challan Number</div>
+                        <div class="field-value">@Model.ChallanID</div>
+                    </div>
+                    <div class="col-6 text-end">
+                        <div class="field-label">Fee Month</div>
+                        <div class="field-value text-primary">@Model.Month</div>
+                    </div>
+                </div>
+
+                <div class="row g-2">
+                    <div class="col-8">
+                        <div class="field-label">Student Name</div>
+                        <div class="field-value">@(Model.Student?.Name ?? "N/A")</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="field-label">Student ID</div>
+                        <div class="field-value">#@Model.StudentID</div>
+                    </div>
+                </div>
+
+                <div class="row g-2">
+                    <div class="col-6">
+                        <div class="field-label">Class & Section</div>
+                        <div class="field-value">@Model.ClassName - @(Model.Student?.Admission?.Section ?? "A")</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="field-label">Due Date</div>
+                        <div class="field-value text-danger">@Model.DueDate.ToString("dd MMM yyyy")</div>
+                    </div>
+                </div>
+
+                <table class="fee-table">
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th class="text-end">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Tuition Fee (@Model.Month)</td>
+                            <td class="text-end">@Model.Amount.ToString("N0")</td>
+                        </tr>
+                        @if (Model.Arrears > 0)
+                        {
+                            <tr>
+                                <td>Previous Arrears</td>
+                                <td class="text-end">@Model.Arrears.ToString("N0")</td>
+                            </tr>
+                        }
+                        <tr class="total-row">
+                            <td>TOTAL PAYABLE</td>
+                            <td class="text-end text-success">Rs. @((Model.Amount + Model.Arrears).ToString("N0"))</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="footer-note">
+                    * Please pay by the due date to avoid late fee charges.<br>
+                    * This challan is valid at all branches of our partner banks.<br>
+                    * Non-refundable after payment.
+                </div>
+
+                <div class="signatures">
+                    <div class="sig-line">Bank Officer</div>
+                    <div class="sig-line">Cashier</div>
+                    <div class="sig-line">Depositor</div>
+                </div>
+            </div>
+        }
+    </div>
+
+</body>
+</html>
