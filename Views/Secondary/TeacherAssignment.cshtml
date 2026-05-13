@@ -1,12 +1,12 @@
 @model IEnumerable<StudentManagementSystem.Models.TeacherAssignment>
 @{
-    ViewData["Title"] = "Teacher Assignments";
+    ViewData["Title"] = "Secondary Assignments";
 }
 
 <div class="container-fluid mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4 px-3">
         <div>
-            <h2 class="fw-bold text-dark mb-1">Teacher Assignments</h2>
+            <h2 class="fw-bold text-dark mb-1">Secondary Assignments</h2>
             <p class="text-muted small">Create and manage student assignments. Expired assignments are hidden automatically.</p>
         </div>
         @if (User.IsInRole("Admin") || User.HasClaim("Permission", "Results.Manage"))

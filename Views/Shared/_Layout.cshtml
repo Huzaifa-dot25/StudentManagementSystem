@@ -131,36 +131,67 @@
             else
             {
                 <div class="nav-group-title">Main Menu</div>
-                <a class="sidebar-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")" 
-                   asp-area="" asp-controller="Home" asp-action="Index">
-                    <i class="fa-solid fa-house"></i>
-                    <span>Dashboard</span>
-                </a>
-                <a class="sidebar-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Students" ? "active" : "")" 
-                   asp-area="" asp-controller="Students" asp-action="Index">
-                    <i class="fa-solid fa-users"></i>
-                    <span>Students</span>
-                </a>
-                <a class="sidebar-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Class" ? "active" : "")" 
-                   asp-area="" asp-controller="Class" asp-action="Index">
-                    <i class="fa-solid fa-chalkboard-user"></i>
-                    <span>Students by Class</span>
-                </a>
-                <a class="sidebar-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Fees" ? "active" : "")" 
-                   asp-area="" asp-controller="Fees" asp-action="Index">
-                    <i class="fa-solid fa-hand-holding-dollar"></i>
-                    <span>Fees</span>
-                </a>
-                <a class="sidebar-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Secondary" ? "active" : "")" 
-                   asp-area="" asp-controller="Secondary" asp-action="Index">
-                    <i class="fa-solid fa-clipboard-list"></i>
-                    <span>Secondary</span>
-                </a>
-                <a class="sidebar-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Primary" ? "active" : "")" 
-                   asp-area="" asp-controller="Primary" asp-action="Index">
-                    <i class="fa-solid fa-star"></i>
-                    <span>Primary</span>
-                </a>
+                @if (User.IsInRole("Admin"))
+                {
+                    <a class="sidebar-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")" 
+                       asp-area="" asp-controller="Home" asp-action="Index">
+                        <i class="fa-solid fa-house"></i>
+                        <span>Dashboard</span>
+                    </a>
+                }
+                @if (User.IsInRole("Admin") || User.HasClaim("Permission", "Students.View"))
+                {
+                    <a class="sidebar-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Students" ? "active" : "")" 
+                       asp-area="" asp-controller="Students" asp-action="Index">
+                        <i class="fa-solid fa-users"></i>
+                        <span>Students</span>
+                    </a>
+                    <a class="sidebar-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Class" ? "active" : "")" 
+                       asp-area="" asp-controller="Class" asp-action="Index">
+                        <i class="fa-solid fa-chalkboard-user"></i>
+                        <span>Students by Class</span>
+                    </a>
+                    <a class="sidebar-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "TeacherAssignment" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Primary" ? "active" : "")" 
+                       asp-area="" asp-controller="Primary" asp-action="TeacherAssignment">
+                        <i class="fa-solid fa-file-signature"></i>
+                        <span>Teacher Assignments</span>
+                    </a>
+                }
+                @if (User.IsInRole("Admin") || User.HasClaim("Permission", "Fees.View"))
+                {
+                    <a class="sidebar-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Fees" ? "active" : "")" 
+                       asp-area="" asp-controller="Fees" asp-action="Index">
+                        <i class="fa-solid fa-hand-holding-dollar"></i>
+                        <span>Fees</span>
+                    </a>
+                }
+                @if (User.IsInRole("Admin") || User.HasClaim("Permission", "Results.View"))
+                {
+                    <a class="sidebar-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Secondary" ? "active" : "")" 
+                       asp-area="" asp-controller="Secondary" asp-action="Index">
+                        <i class="fa-solid fa-clipboard-list"></i>
+                        <span>Secondary</span>
+                    </a>
+                    <a class="sidebar-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Primary" ? "active" : "")" 
+                       asp-area="" asp-controller="Primary" asp-action="Index">
+                        <i class="fa-solid fa-star"></i>
+                        <span>Primary</span>
+                    </a>
+                    <a class="sidebar-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "TeacherAssignment" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Secondary" ? "active" : "")" 
+                       asp-area="" asp-controller="Secondary" asp-action="TeacherAssignment">
+                        <i class="fa-solid fa-file-pen"></i>
+                        <span>Teacher Assignments</span>
+                    </a>
+                }
+                @if (User.IsInRole("Admin"))
+                {
+                    <div class="nav-group-title mt-3">System Settings</div>
+                    <a class="sidebar-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Users" ? "active" : "")" 
+                       asp-area="" asp-controller="Users" asp-action="Index">
+                        <i class="fa-solid fa-user-gear"></i>
+                        <span>User Management</span>
+                    </a>
+                }
             }
         </div>
     </aside>
@@ -177,13 +208,13 @@
                 <div class="dropdown">
                     <button class="btn btn-link text-dark text-decoration-none dropdown-toggle" type="button" data-bs-toggle="dropdown">
                         <i class="fa-solid fa-circle-user fs-4 me-1"></i>
-                        <span class="d-none d-sm-inline">Admin User</span>
+                        <span class="d-none d-sm-inline">@User.Identity?.Name</span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><a class="dropdown-item" href="#"><i class="fa-solid fa-user me-2"></i>Profile</a></li>
                         <li><a class="dropdown-item" href="#"><i class="fa-solid fa-gear me-2"></i>Settings</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-danger" href="#"><i class="fa-solid fa-right-from-bracket me-2"></i>Logout</a></li>
+                        <li><a class="dropdown-item text-danger" href="javascript:void(0)" onclick="logout()"><i class="fa-solid fa-right-from-bracket me-2"></i>Logout</a></li>
                     </ul>
                 </div>
             </div>
@@ -203,6 +234,16 @@
         document.getElementById('sidebarToggle')?.addEventListener('click', function() {
             document.getElementById('sidebar').classList.toggle('show');
         });
+
+        function logout() {
+            // Clear storage
+            localStorage.removeItem('token');
+            localStorage.removeItem('role');
+            // Clear cookie
+            document.cookie = "jwt_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+            // Redirect
+            window.location.href = '/Account/Login';
+        }
     </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

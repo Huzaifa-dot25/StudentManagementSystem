@@ -5,9 +5,11 @@ using StudentManagementSystem.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 
 namespace StudentManagementSystem.Controllers;
 
+[Authorize(Roles = "Admin")]
 public class HomeController : Controller
 {
     private readonly ApplicationDbContext _context;

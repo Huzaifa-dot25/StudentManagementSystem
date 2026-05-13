@@ -1,0 +1,80 @@
+@model StudentManagementSystem.Models.RegisterModel
+@{
+    ViewData["Title"] = "Create User";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-lg" style="border-radius: 20px;">
+                <div class="card-header bg-primary text-white py-4 text-center border-0" style="border-radius: 20px 20px 0 0;">
+                    <h3 class="fw-bold mb-0"><i class="fas fa-user-plus me-2"></i>Create New Account</h3>
+                </div>
+                <div class="card-body p-5">
+                    <form asp-action="Create" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-600">Email Address</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-0"><i class="fas fa-envelope text-muted"></i></span>
+                                <input asp-for="Email" class="form-control bg-light border-0" placeholder="user@sms.com" required />
+                            </div>
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-600">Initial Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-0"><i class="fas fa-lock text-muted"></i></span>
+                                <input asp-for="Password" type="password" id="password" class="form-control bg-light border-0" placeholder="••••••••" required />
+                                <span class="input-group-text bg-light border-0 cursor-pointer" onclick="togglePassword('password', this)">
+                                    <i class="fas fa-eye text-muted"></i>
+                                </span>
+                            </div>
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-600">Assigned Role</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-0"><i class="fas fa-shield-alt text-muted"></i></span>
+                                <select asp-for="Role" class="form-select bg-light border-0" required>
+                                    <option value="User">User (Restricted View)</option>
+                                    <option value="Admin">Administrator (Full Access)</option>
+                                </select>
+                            </div>
+                            <span asp-validation-for="Role" class="text-danger small"></span>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-5">
+                            <button type="submit" class="btn btn-primary rounded-pill py-3 fw-bold shadow">
+                                <i class="fas fa-save me-2"></i>Create User Account
+                            </button>
+                            <a asp-action="Index" class="btn btn-link text-muted py-2 text-decoration-none">
+                                <i class="fas fa-arrow-left me-2"></i>Back to User List
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        function togglePassword(inputId, iconElement) {
+            const input = document.getElementById(inputId);
+            const icon = iconElement.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        }
+    </script>
+}

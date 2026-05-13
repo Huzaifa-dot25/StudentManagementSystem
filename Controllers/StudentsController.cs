@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StudentManagementSystem.Data;
@@ -5,6 +6,7 @@ using StudentManagementSystem.Models;
 
 namespace StudentManagementSystem.Controllers
 {
+    [Authorize(Policy = "CanViewStudents")]
     public class StudentsController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -135,6 +137,7 @@ namespace StudentManagementSystem.Controllers
         }
 
         // POST: Students/Create
+        [Authorize(Policy = "CanManageStudents")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Student student, IFormFile? photoFile, List<IFormFile> documentFiles)
@@ -173,6 +176,7 @@ namespace StudentManagementSystem.Controllers
         }
 
         // GET: Students/Edit/5
+        [Authorize(Policy = "CanManageStudents")]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
@@ -297,6 +301,7 @@ namespace StudentManagementSystem.Controllers
         }
 
         // GET: Students/Delete/5
+        [Authorize(Policy = "CanManageStudents")]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null) return NotFound();

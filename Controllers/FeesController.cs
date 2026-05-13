@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StudentManagementSystem.Data;
@@ -5,6 +6,7 @@ using StudentManagementSystem.Models;
 
 namespace StudentManagementSystem.Controllers
 {
+    [Authorize(Policy = "CanViewFees")]
     public class FeesController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -64,6 +66,7 @@ namespace StudentManagementSystem.Controllers
         }
 
         // POST: Fees/Generate
+        [Authorize(Policy = "CanManageFees")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Generate(GenerateChallanViewModel model)

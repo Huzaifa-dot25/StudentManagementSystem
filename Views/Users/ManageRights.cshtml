@@ -1,0 +1,78 @@
+@model StudentManagementSystem.Controllers.ManageRightsViewModel
+@{
+    ViewData["Title"] = "Manage Individual Rights";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-lg" style="border-radius: 20px;">
+                <div class="card-header bg-dark text-white py-4 px-5 border-0" style="border-radius: 20px 20px 0 0;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="fw-bold mb-1"><i class="fas fa-user-shield me-2 text-warning"></i>Individual Rights</h3>
+                            <p class="mb-0 text-white-50">Managing permissions for: <strong>@Model.Email</strong></p>
+                        </div>
+                        <i class="fas fa-key fa-2x opacity-25"></i>
+                    </div>
+                </div>
+                <div class="card-body p-5">
+                    <form asp-action="ManageRights" method="post">
+                        <input type="hidden" asp-for="UserId" />
+                        <input type="hidden" asp-for="Email" />
+
+                        <div class="row g-4">
+                            @for (int i = 0; i < Model.Permissions.Count; i++)
+                            {
+                                <div class="col-md-6">
+                                    <div class="permission-card p-3 border rounded-3 h-100 transition-hover">
+                                        <div class="form-check form-switch d-flex align-items-center gap-3">
+                                            <input class="form-check-input custom-switch" type="checkbox" asp-for="@Model.Permissions[i].IsSelected">
+                                            <input type="hidden" asp-for="@Model.Permissions[i].PermissionName" />
+                                            <label class="form-check-label fw-bold" style="cursor: pointer;">
+                                                @Model.Permissions[i].PermissionName.Replace(".", " - ")
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="alert alert-info mt-5 border-0 shadow-sm rounded-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Individual rights override or supplement role-based permissions. Use these to grant specific access to teachers or staff.
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-dark rounded-pill py-3 fw-bold shadow">
+                                <i class="fas fa-save me-2 text-warning"></i>Save Individual Rights
+                            </button>
+                            <a asp-action="Index" class="btn btn-link text-muted py-2 text-decoration-none">
+                                <i class="fas fa-arrow-left me-2"></i>Back to User List
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .permission-card {
+        background: #f8f9fa;
+        transition: 0.2s;
+    }
+    .permission-card:hover {
+        background: #fff;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        border-color: #dee2e6 !important;
+        transform: translateY(-2px);
+    }
+    .custom-switch {
+        width: 3rem !important;
+        height: 1.5rem !important;
+        cursor: pointer;
+    }
+    .fw-600 { font-weight: 600; }
+</style>

@@ -1,9 +1,10 @@
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using StudentManagementSystem.Models;
 
 namespace StudentManagementSystem.Data
 {
-    public class ApplicationDbContext : DbContext
+    public class ApplicationDbContext : IdentityDbContext
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
@@ -22,6 +23,7 @@ namespace StudentManagementSystem.Data
         public DbSet<FeeSchedule> FeeSchedules { get; set; }
         public DbSet<FeeScheduleItem> FeeScheduleItems { get; set; }
         public DbSet<StudentResult> StudentResults { get; set; }
+        public DbSet<TeacherAssignment> TeacherAssignments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

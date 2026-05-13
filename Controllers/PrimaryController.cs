@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StudentManagementSystem.Data;
@@ -5,6 +6,7 @@ using StudentManagementSystem.Models;
 
 namespace StudentManagementSystem.Controllers
 {
+    [Authorize(Policy = "CanViewResults")]
     public class PrimaryController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -36,6 +38,7 @@ namespace StudentManagementSystem.Controllers
             ViewBag.Terms    = await _context.StudentResults.Select(r => r.Term).Distinct().OrderBy(t => t).ToListAsync();
         }
 
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ManageResult(string session, string className, string section, string term, string examType)
         {
             await PopulateResultDropdowns();
@@ -149,10 +152,61 @@ namespace StudentManagementSystem.Controllers
             return View(reportCards);
         }
 
-        public IActionResult TeacherAssignment()      => View();
+        public async Task<IActionResult> TeacherAssignment()
+        {
+            var today = DateTime.Today;
+            // Only show assignments where EndDate is today or in the future
+            var assignments = await _context.TeacherAssignments
+                .Where(a => a.EndDate >= today)
+                .OrderByDescending(a => a.CreatedAt)
+                .ToListAsync();
+
+            ViewBag.Classes = await _context.Admissions.Where(a => !string.IsNullOrEmpty(a.Class)).Select(a => a.Class!).Distinct().ToListAsync();
+            ViewBag.Sections = await _context.Admissions.Where(a => !string.IsNullOrEmpty(a.Section)).Select(a => a.Section!).Distinct().ToListAsync();
+
+            return View(assignments);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Policy = "CanManageResults")]
+        public async Task<IActionResult> SaveAssignment(TeacherAssignment model)
+        {
+            if (ModelState.IsValid)
+            {
+                if (model.Id == 0)
+                {
+                    _context.TeacherAssignments.Add(model);
+                }
+                else
+                {
+                    _context.TeacherAssignments.Update(model);
+                }
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Assignment saved successfully!";
+            }
+            return RedirectToAction(nameof(TeacherAssignment));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Policy = "CanManageResults")]
+        public async Task<IActionResult> DeleteAssignment(int id)
+        {
+            var assignment = await _context.TeacherAssignments.FindAsync(id);
+            if (assignment != null)
+            {
+                _context.TeacherAssignments.Remove(assignment);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Assignment deleted successfully!";
+            }
+            return RedirectToAction(nameof(TeacherAssignment));
+        }
+
         public IActionResult ManageStatements()        => View();
         public IActionResult ViewStatementsByClass()   => View();
 
+        [Authorize(Policy = "CanManageResults")]
         [HttpPost]
         public async Task<IActionResult> SaveResults(List<StudentResult> results)
         {
