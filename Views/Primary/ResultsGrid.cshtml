@@ -21,8 +21,8 @@
             <div class="row g-3">
                 <div class="col-md-3">
                     <label class="form-label small fw-bold">Session</label>
-                    <select name="session" class="form-select bg-light border-0 shadow-sm">
-                        <option value="">-- All Sessions --</option>
+                    <select name="session" class="form-select bg-light border-0 shadow-sm" onchange="this.form.submit()">
+                        <option value="">-- Choose Session --</option>
                         @foreach (var s in (List<string>)ViewBag.Sessions)
                         {
                             <option value="@s" selected="@(s == Model.SelectedSession)">@s</option>

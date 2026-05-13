@@ -29,8 +29,15 @@
                 <form asp-action="ManageResult" method="get">
                     <div class="mb-4">
                         <label class="form-label fw-600 small text-muted">ACADEMIC SESSION</label>
-                        <select name="session" class="form-select border-0 shadow-sm py-2 px-3 bg-white" style="border-radius: 12px;">
-                            <option>2025 - 2026</option>
+                        <select name="session" class="form-select border-0 shadow-sm py-2 px-3 bg-white" style="border-radius: 12px;" onchange="this.form.submit()">
+                            <option value="">-- Choose Session --</option>
+                            @if (ViewBag.Sessions != null) {
+                                @foreach (var s in ViewBag.Sessions) {
+                                    <option value="@s" selected="@(Context.Request.Query["session"].ToString() == s)">@s</option>
+                                }
+                            } else {
+                                <option>2025 - 2026</option>
+                            }
                         </select>
                     </div>
                     <div class="mb-4">

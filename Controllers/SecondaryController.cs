@@ -55,17 +55,33 @@ namespace StudentManagementSystem.Controllers
             return RedirectToAction(nameof(ManageResult));
         }
 
+        private async Task PopulateResultDropdowns()
+        {
+            var admSessions = await _context.Admissions.Where(a => !string.IsNullOrEmpty(a.Session)).Select(a => a.Session!).Distinct().ToListAsync();
+            var resSessions = await _context.StudentResults.Where(r => !string.IsNullOrEmpty(r.Session)).Select(r => r.Session!).Distinct().ToListAsync();
+            
+            var allSessions = admSessions.Union(resSessions).Distinct().OrderByDescending(s => s).ToList();
+            if (!allSessions.Any())
+            {
+                allSessions = new List<string> { "2024 - 2025", "2025 - 2026" };
+            }
+            ViewBag.Sessions = allSessions;
+
+            ViewBag.Classes  = await _context.Admissions.Where(a => !string.IsNullOrEmpty(a.Class)).Select(a => a.Class!).Distinct().OrderBy(c => c).ToListAsync();
+            ViewBag.Sections = await _context.Admissions.Where(a => !string.IsNullOrEmpty(a.Section)).Select(a => a.Section!).Distinct().OrderBy(s => s).ToListAsync();
+            ViewBag.Terms    = await _context.StudentResults.Select(r => r.Term).Distinct().OrderBy(t => t).ToListAsync();
+        }
+
         public async Task<IActionResult> ManageResult(string session, string className, string section, string term, string examType)
         {
-            ViewBag.Sessions = await _context.Admissions.Select(a => a.Session).Distinct().ToListAsync();
-            ViewBag.Classes  = await _context.Admissions.Select(a => a.Class).Distinct().ToListAsync();
-            ViewBag.Sections = await _context.Admissions.Select(a => a.Section).Distinct().ToListAsync();
+            await PopulateResultDropdowns();
 
             var students = new List<Student>();
             if (!string.IsNullOrEmpty(className))
             {
                 students = await _context.Students
                     .Include(s => s.Admission)
+                    .Include(s => s.Parent)
                     .Where(s => s.Admission != null && s.Admission.Class == className &&
                                 (string.IsNullOrEmpty(section) || s.Admission.Section == section))
                     .ToListAsync();
@@ -76,10 +92,7 @@ namespace StudentManagementSystem.Controllers
 
         public async Task<IActionResult> ResultsGrid(string? session, string? className, string? section, string? term)
         {
-            ViewBag.Sessions = await _context.StudentResults.Select(r => r.Session).Distinct().OrderByDescending(s => s).ToListAsync();
-            ViewBag.Classes  = await _context.Admissions.Where(a => !string.IsNullOrEmpty(a.Class)).Select(a => a.Class!).Distinct().OrderBy(c => c).ToListAsync();
-            ViewBag.Sections = await _context.Admissions.Where(a => !string.IsNullOrEmpty(a.Section)).Select(a => a.Section!).Distinct().OrderBy(s => s).ToListAsync();
-            ViewBag.Terms    = await _context.StudentResults.Select(r => r.Term).Distinct().OrderBy(t => t).ToListAsync();
+            await PopulateResultDropdowns();
 
             var vm = new ResultsGridViewModel
             {
@@ -133,10 +146,7 @@ namespace StudentManagementSystem.Controllers
 
         public async Task<IActionResult> PrintResult(string? session, string? className, string? section, string? term, string? type)
         {
-            ViewBag.Sessions = await _context.StudentResults.Select(r => r.Session).Distinct().OrderByDescending(s => s).ToListAsync();
-            ViewBag.Classes  = await _context.Admissions.Where(a => !string.IsNullOrEmpty(a.Class)).Select(a => a.Class!).Distinct().OrderBy(c => c).ToListAsync();
-            ViewBag.Sections = await _context.Admissions.Where(a => !string.IsNullOrEmpty(a.Section)).Select(a => a.Section!).Distinct().OrderBy(s => s).ToListAsync();
-            ViewBag.Terms    = await _context.StudentResults.Select(r => r.Term).Distinct().OrderBy(t => t).ToListAsync();
+            await PopulateResultDropdowns();
             ViewBag.Type     = string.IsNullOrEmpty(type) ? "EndOfYear" : type;
 
             var results = await _context.StudentResults
