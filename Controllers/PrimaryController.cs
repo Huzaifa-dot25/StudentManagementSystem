@@ -35,26 +35,145 @@ namespace StudentManagementSystem.Controllers
 
             ViewBag.Classes  = await _context.Admissions.Where(a => !string.IsNullOrEmpty(a.Class)).Select(a => a.Class!).Distinct().OrderBy(c => c).ToListAsync();
             ViewBag.Sections = await _context.Admissions.Where(a => !string.IsNullOrEmpty(a.Section)).Select(a => a.Section!).Distinct().OrderBy(s => s).ToListAsync();
-            ViewBag.Terms    = await _context.StudentResults.Select(r => r.Term).Distinct().OrderBy(t => t).ToListAsync();
+
+            var terms = await _context.StudentResults.Where(r => !string.IsNullOrEmpty(r.Term)).Select(r => r.Term).Distinct().OrderBy(t => t).ToListAsync();
+            if (!terms.Any())
+            {
+                terms = new List<string> { "Term 1", "Term 2", "Annual" };
+            }
+            ViewBag.Terms = terms;
+
+            ViewBag.ExamTypes = new List<string> { "Written", "Midterm", "Final", "Practical", "Oral" };
+        }
+
+        private static readonly string[] PrimarySubjectOptions =
+        {
+            "General Science", "Social Studies", "Mathematics", "English Language", "Urdu", "Islamiyat"
+        };
+
+        private async Task<ManageResultsPageViewModel> BuildManageResultsPageAsync(
+            string? session, string? className, string? section, string? term, string? examType, string? subject)
+        {
+            var sessionEffective = session?.Trim() ?? "";
+            var termEffective = string.IsNullOrWhiteSpace(term) ? "Term 1" : term.Trim();
+            var examEffective = string.IsNullOrWhiteSpace(examType) ? "Written" : examType.Trim();
+            var subjectTrim = subject?.Trim() ?? "";
+            var subjectEffective = PrimarySubjectOptions.FirstOrDefault(s => s.Equals(subjectTrim, StringComparison.OrdinalIgnoreCase))
+                ?? PrimarySubjectOptions[0];
+
+            if (string.IsNullOrEmpty(className))
+            {
+                return new ManageResultsPageViewModel
+                {
+                    Session = sessionEffective,
+                    ClassName = "",
+                    Section = section?.Trim() ?? "",
+                    Term = termEffective,
+                    ExamType = examEffective,
+                    Subject = subjectEffective
+                };
+            }
+
+            var students = await _context.Students
+                .Include(s => s.Admission)
+                .Include(s => s.Parent)
+                .Where(s => s.Admission != null && s.Admission.Class == className &&
+                            (string.IsNullOrEmpty(section) || s.Admission.Section == section) &&
+                            (string.IsNullOrEmpty(sessionEffective) || s.Admission.Session == sessionEffective))
+                .OrderBy(s => s.Admission!.RollNo)
+                .ThenBy(s => s.Name)
+                .ToListAsync();
+
+            var studentIds = students.Select(s => s.StudentID).ToList();
+            var existingRows = studentIds.Count == 0
+                ? new List<StudentResult>()
+                : await _context.StudentResults.AsNoTracking()
+                    .Where(r => studentIds.Contains(r.StudentID) &&
+                                r.Class == className &&
+                                r.Term == termEffective &&
+                                r.ExamType == examEffective &&
+                                r.Subject == subjectEffective &&
+                                (string.IsNullOrEmpty(sessionEffective) || r.Session == sessionEffective))
+                    .ToListAsync();
+
+            var results = new List<StudentResult>();
+            foreach (var student in students)
+            {
+                var adm = student.Admission!;
+                var sess = !string.IsNullOrEmpty(sessionEffective) ? sessionEffective : (adm.Session ?? "");
+                var sec = adm.Section ?? "";
+
+                var existing = existingRows.FirstOrDefault(r =>
+                    r.StudentID == student.StudentID &&
+                    r.Section == sec &&
+                    r.Session == sess);
+
+                if (existing != null)
+                {
+                    results.Add(new StudentResult
+                    {
+                        Id = existing.Id,
+                        StudentID = student.StudentID,
+                        Session = existing.Session,
+                        Class = existing.Class,
+                        Section = existing.Section,
+                        Term = existing.Term,
+                        ExamType = existing.ExamType,
+                        Subject = existing.Subject,
+                        SubSubject = existing.SubSubject,
+                        ExamDate = existing.ExamDate,
+                        DeclarationDate = existing.DeclarationDate,
+                        TotalMarks = existing.TotalMarks,
+                        ObtainedMarks = existing.ObtainedMarks,
+                        Status = existing.Status,
+                        IsAnnounced = existing.IsAnnounced,
+                        Student = student
+                    });
+                }
+                else
+                {
+                    results.Add(new StudentResult
+                    {
+                        Id = 0,
+                        StudentID = student.StudentID,
+                        Session = sess,
+                        Class = adm.Class ?? "",
+                        Section = sec,
+                        Term = termEffective,
+                        ExamType = examEffective,
+                        Subject = subjectEffective,
+                        SubSubject = "",
+                        ExamDate = DateTime.Today,
+                        DeclarationDate = DateTime.Today,
+                        TotalMarks = 100,
+                        ObtainedMarks = 0,
+                        Status = "Present",
+                        IsAnnounced = false,
+                        Student = student
+                    });
+                }
+            }
+
+            return new ManageResultsPageViewModel
+            {
+                Session = sessionEffective,
+                ClassName = className,
+                Section = section?.Trim() ?? "",
+                Term = termEffective,
+                ExamType = examEffective,
+                Subject = subjectEffective,
+                Results = results
+            };
         }
 
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> ManageResult(string session, string className, string section, string term, string examType)
+        public async Task<IActionResult> ManageResult(string? session, string? className, string? section, string? term, string? examType, string? subject)
         {
             await PopulateResultDropdowns();
+            ViewBag.Subjects = PrimarySubjectOptions;
 
-            var students = new List<Student>();
-            if (!string.IsNullOrEmpty(className))
-            {
-                students = await _context.Students
-                    .Include(s => s.Admission)
-                    .Include(s => s.Parent)
-                    .Where(s => s.Admission != null && s.Admission.Class == className &&
-                                (string.IsNullOrEmpty(section) || s.Admission.Section == section))
-                    .ToListAsync();
-            }
-
-            return View(students);
+            var page = await BuildManageResultsPageAsync(session, className, section, term, examType, subject);
+            return View(page);
         }
 
         public async Task<IActionResult> ResultsGrid(string? session, string? className, string? section, string? term)
@@ -208,39 +327,53 @@ namespace StudentManagementSystem.Controllers
 
         [Authorize(Policy = "CanManageResults")]
         [HttpPost]
-        public async Task<IActionResult> SaveResults(List<StudentResult> results)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveResults([FromForm, Bind(Prefix = "Results")] List<StudentResult> results)
         {
-            if (results != null && results.Any())
+            if (results == null || !results.Any())
             {
-                foreach (var result in results)
-                {
-                    var existing = await _context.StudentResults.FirstOrDefaultAsync(r =>
-                        r.StudentID == result.StudentID &&
-                        r.Session   == result.Session   &&
-                        r.Class     == result.Class     &&
-                        r.Section   == result.Section   &&
-                        r.Term      == result.Term      &&
-                        r.ExamType  == result.ExamType  &&
-                        r.Subject   == result.Subject);
+                TempData["ErrorMessage"] = "Nothing to save. Load a class and enter marks, then try again.";
+                return RedirectToAction(nameof(ManageResult));
+            }
 
-                    if (existing != null)
+            foreach (var posted in results)
+            {
+                posted.Student = null;
+                posted.SubSubject ??= string.Empty;
+
+                if (posted.Id > 0)
+                {
+                    var entity = await _context.StudentResults.FindAsync(posted.Id);
+                    if (entity != null)
                     {
-                        existing.ObtainedMarks   = result.ObtainedMarks;
-                        existing.Status          = result.Status;
-                        existing.ExamDate        = result.ExamDate;
-                        existing.DeclarationDate = result.DeclarationDate;
-                        existing.TotalMarks      = result.TotalMarks;
-                        existing.IsAnnounced     = result.IsAnnounced;
-                    }
-                    else
-                    {
-                        _context.StudentResults.Add(result);
+                        entity.ObtainedMarks = posted.ObtainedMarks;
+                        entity.Status = posted.Status;
+                        entity.ExamDate = posted.ExamDate;
+                        entity.DeclarationDate = posted.DeclarationDate;
+                        entity.TotalMarks = posted.TotalMarks;
+                        entity.IsAnnounced = posted.IsAnnounced;
                     }
                 }
-                await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Results saved successfully!";
+                else
+                {
+                    posted.Id = 0;
+                    _context.StudentResults.Add(posted);
+                }
             }
-            return RedirectToAction(nameof(ManageResult));
+
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Results saved successfully!";
+
+            var first = results[0];
+            return RedirectToAction(nameof(ManageResult), new
+            {
+                session = first.Session,
+                className = first.Class,
+                section = first.Section,
+                term = first.Term,
+                examType = first.ExamType,
+                subject = first.Subject
+            });
         }
     }
 }

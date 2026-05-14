@@ -114,5 +114,66 @@ namespace StudentManagementSystem.Controllers
 
             return RedirectToAction("Index", "Students");
         }
+
+        /// <summary>
+        /// Adds sample fee challans for students who have none (for reports such as Secondary/StudentDetailReport).
+        /// Safe to run multiple times; only fills students with zero challans.
+        /// </summary>
+        public async Task<IActionResult> DummyChallans()
+        {
+            var studentIdsWithChallans = await _context.FeeChallans
+                .Select(f => f.StudentID)
+                .Distinct()
+                .ToListAsync();
+
+            var students = await _context.Students
+                .Include(s => s.Admission)
+                .Where(s => s.Admission != null && !studentIdsWithChallans.Contains(s.StudentID))
+                .ToListAsync();
+
+            int added = 0;
+            foreach (var student in students)
+            {
+                var className = student.Admission!.Class ?? "Unknown";
+
+                _context.FeeChallans.Add(new FeeChallan
+                {
+                    ChallanID = Guid.NewGuid().ToString("N")[..8].ToUpperInvariant(),
+                    StudentID = student.StudentID,
+                    ClassName = className,
+                    Month = DateTime.Today.AddMonths(-1).ToString("MMM-yy"),
+                    Amount = 5000,
+                    Arrears = 0,
+                    DueDate = DateTime.Today.AddMonths(-1).AddDays(15),
+                    Status = "Paid"
+                });
+                added++;
+
+                _context.FeeChallans.Add(new FeeChallan
+                {
+                    ChallanID = Guid.NewGuid().ToString("N")[..8].ToUpperInvariant(),
+                    StudentID = student.StudentID,
+                    ClassName = className,
+                    Month = DateTime.Today.ToString("MMM-yy"),
+                    Amount = 5000,
+                    Arrears = 0,
+                    DueDate = DateTime.Today.AddDays(14),
+                    Status = "Unpaid"
+                });
+                added++;
+            }
+
+            if (added > 0)
+            {
+                await _context.SaveChangesAsync();
+                TempData["Success"] = $"Added {added} dummy challans for {students.Count} students (one paid, one current unpaid each).";
+            }
+            else
+            {
+                TempData["Info"] = "Every student already has at least one challan; nothing to add.";
+            }
+
+            return RedirectToAction("Index", "Students");
+        }
     }
 }

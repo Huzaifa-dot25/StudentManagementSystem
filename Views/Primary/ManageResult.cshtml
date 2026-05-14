@@ -1,23 +1,34 @@
-@model IEnumerable<StudentManagementSystem.Models.Student>
+@model StudentManagementSystem.Models.ManageResultsPageViewModel
 @{
     ViewData["Title"] = "Primary - Manage Result";
 }
 
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show rounded-3 mb-3" role="alert">
+        <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show rounded-3 mb-3" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
 <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 20px;">
     <div class="card-header bg-dark-blue text-white py-4 px-4 border-0">
-        <div class="d-flex justify-content-between align-items-center">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
             <div>
                 <h4 class="mb-1 fw-bold"><i class="fas fa-edit me-3 text-warning"></i>Primary Assessment</h4>
                 <p class="mb-0 opacity-75 small">Manage marks and examination status for primary students.</p>
             </div>
-            <button class="btn btn-warning rounded-pill px-4 shadow-sm fw-bold">
-                <i class="fas fa-save me-2"></i>Save Changes
-            </button>
         </div>
     </div>
     <div class="card-body p-0">
         <div class="row g-0">
-            <!-- Filter Panel -->
             <div class="col-md-3 border-end bg-light p-4">
                 <div class="d-flex align-items-center mb-4">
                     <div class="bg-primary text-white rounded-circle p-2 me-3">
@@ -25,18 +36,25 @@
                     </div>
                     <h6 class="fw-bold mb-0 text-dark">Selection Panel</h6>
                 </div>
-                
+
                 <form asp-action="ManageResult" method="get">
                     <div class="mb-4">
                         <label class="form-label fw-600 small text-muted">ACADEMIC SESSION</label>
                         <select name="session" class="form-select border-0 shadow-sm py-2 px-3 bg-white" style="border-radius: 12px;" onchange="this.form.submit()">
-                            <option value="">-- Choose Session --</option>
-                            @if (ViewBag.Sessions != null) {
-                                @foreach (var s in ViewBag.Sessions) {
-                                    <option value="@s" selected="@(Context.Request.Query["session"].ToString() == s)">@s</option>
+                            <option value="">-- All sessions --</option>
+                            @if (ViewBag.Sessions != null)
+                            {
+                                @foreach (var s in ViewBag.Sessions)
+                                {
+                                    if (Model.Session == s)
+                                    {
+                                        <option value="@s" selected>@s</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@s">@s</option>
+                                    }
                                 }
-                            } else {
-                                <option>2025 - 2026</option>
                             }
                         </select>
                     </div>
@@ -44,9 +62,18 @@
                         <label class="form-label fw-600 small text-muted">SELECT CLASS</label>
                         <select name="className" class="form-select border-0 shadow-sm py-2 px-3 bg-white" style="border-radius: 12px;" onchange="this.form.submit()">
                             <option value="">-- Choose Class --</option>
-                            @if (ViewBag.Classes != null) {
-                                @foreach (var c in ViewBag.Classes) { 
-                                    <option value="@c" selected="@(Context.Request.Query["className"].ToString() == c)">@c</option> 
+                            @if (ViewBag.Classes != null)
+                            {
+                                @foreach (var c in ViewBag.Classes)
+                                {
+                                    if (Model.ClassName == c)
+                                    {
+                                        <option value="@c" selected>@c</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@c">@c</option>
+                                    }
                                 }
                             }
                         </select>
@@ -55,9 +82,50 @@
                         <label class="form-label fw-600 small text-muted">SECTION</label>
                         <select name="section" class="form-select border-0 shadow-sm py-2 px-3 bg-white" style="border-radius: 12px;">
                             <option value="">-- All Sections --</option>
-                            @if (ViewBag.Sections != null) {
-                                @foreach (var s in ViewBag.Sections) { 
-                                    <option value="@s" selected="@(Context.Request.Query["section"].ToString() == s)">@s</option> 
+                            @if (ViewBag.Sections != null)
+                            {
+                                @foreach (var s in ViewBag.Sections)
+                                {
+                                    if (Model.Section == s)
+                                    {
+                                        <option value="@s" selected>@s</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@s">@s</option>
+                                    }
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-600 small text-muted">TERM</label>
+                        <select name="term" class="form-select border-0 shadow-sm py-2 px-3 bg-white" style="border-radius: 12px;">
+                            @foreach (var t in ViewBag.Terms)
+                            {
+                                if (Model.Term == t)
+                                {
+                                    <option value="@t" selected>@t</option>
+                                }
+                                else
+                                {
+                                    <option value="@t">@t</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-600 small text-muted">EXAM TYPE</label>
+                        <select name="examType" class="form-select border-0 shadow-sm py-2 px-3 bg-white" style="border-radius: 12px;">
+                            @foreach (var e in ViewBag.ExamTypes)
+                            {
+                                if (Model.ExamType == e)
+                                {
+                                    <option value="@e" selected>@e</option>
+                                }
+                                else
+                                {
+                                    <option value="@e">@e</option>
                                 }
                             }
                         </select>
@@ -65,11 +133,17 @@
                     <div class="mb-4">
                         <label class="form-label fw-600 small text-muted">SUBJECT</label>
                         <select name="subject" class="form-select border-0 shadow-sm py-2 px-3 bg-white" style="border-radius: 12px;">
-                            <option value="">General Science</option>
-                            <option value="">Social Studies</option>
-                            <option value="">Mathematics</option>
-                            <option value="">English Language</option>
-                            <option value="">Urdu</option>
+                            @foreach (var sub in ViewBag.Subjects)
+                            {
+                                if (Model.Subject == sub)
+                                {
+                                    <option value="@sub" selected>@sub</option>
+                                }
+                                else
+                                {
+                                    <option value="@sub">@sub</option>
+                                }
+                            }
                         </select>
                     </div>
                     <button type="submit" class="btn btn-dark-blue w-100 py-2 rounded-pill shadow-sm">
@@ -78,69 +152,88 @@
                 </form>
             </div>
 
-            <!-- Main Content Area -->
             <div class="col-md-9 p-4 bg-white">
-                <div class="mb-4 d-flex justify-content-between align-items-center">
-                    <h6 class="fw-bold text-muted mb-0">STUDENT LIST <span class="badge bg-soft-primary text-primary ms-2">@(Model?.Count() ?? 0) Students</span></h6>
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3">Download Template</button>
-                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3">Import Data</button>
-                    </div>
-                </div>
+                <form asp-action="SaveResults" method="post">
+                    @Html.AntiForgeryToken()
 
-                <div class="table-responsive rounded-3 overflow-hidden shadow-sm border">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="bg-light">
-                            <tr>
-                                <th class="ps-4 py-3" style="width: 100px;">Roll No</th>
-                                <th class="py-3">Student Name</th>
-                                <th class="py-3">Father's Name</th>
-                                <th class="py-3 text-center" style="width: 250px;">Status & Marks</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if (Model != null && Model.Any())
-                            {
-                                @foreach (var student in Model)
+                    <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <h6 class="fw-bold text-muted mb-0">STUDENT LIST <span class="badge bg-soft-primary text-primary ms-2">@(Model.Results?.Count ?? 0) Students</span></h6>
+                        <button type="submit" class="btn btn-warning rounded-pill px-4 shadow-sm fw-bold">
+                            <i class="fas fa-save me-2"></i>Save Changes
+                        </button>
+                    </div>
+
+                    <div class="table-responsive rounded-3 overflow-hidden shadow-sm border">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-4 py-3" style="width: 100px;">Roll No</th>
+                                    <th class="py-3">Student Name</th>
+                                    <th class="py-3">Father's Name</th>
+                                    <th class="py-3 text-center" style="width: 280px;">Status & Marks</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.Results != null && Model.Results.Any())
+                                {
+                                    @for (var i = 0; i < Model.Results.Count; i++)
+                                    {
+                                        var row = Model.Results[i];
+                                        var st = row.Student;
+                                        <tr>
+                                            <td class="ps-4 fw-bold text-primary">@(st?.Admission?.RollNo ?? ("#" + row.StudentID))</td>
+                                            <td>
+                                                <div class="fw-bold">@(st?.Name ?? "Student")</div>
+                                                <div class="text-muted small">@st?.Admission?.Class - @st?.Admission?.Section</div>
+                                            </td>
+                                            <td>@st?.Parent?.FatherName</td>
+                                            <td>
+                                                <input type="hidden" asp-for="Results[i].Id" />
+                                                <input type="hidden" asp-for="Results[i].StudentID" />
+                                                <input type="hidden" asp-for="Results[i].Session" />
+                                                <input type="hidden" asp-for="Results[i].Class" />
+                                                <input type="hidden" asp-for="Results[i].Section" />
+                                                <input type="hidden" asp-for="Results[i].Term" />
+                                                <input type="hidden" asp-for="Results[i].ExamType" />
+                                                <input type="hidden" asp-for="Results[i].Subject" />
+                                                <input type="hidden" asp-for="Results[i].SubSubject" />
+                                                <input type="hidden" asp-for="Results[i].ExamDate" />
+                                                <input type="hidden" asp-for="Results[i].DeclarationDate" />
+                                                <input type="hidden" asp-for="Results[i].TotalMarks" />
+                                                <input type="hidden" asp-for="Results[i].IsAnnounced" />
+
+                                                <div class="d-flex align-items-center gap-2 justify-content-center flex-wrap">
+                                                    <select class="form-select form-select-sm border-0 bg-light" style="width: 110px; border-radius: 8px;" asp-for="Results[i].Status">
+                                                        <option value="Present">Present</option>
+                                                        <option value="Absent">Absent</option>
+                                                        <option value="Pending">Pending</option>
+                                                        <option value="Ignore">Ignore</option>
+                                                    </select>
+                                                    <div class="input-group input-group-sm" style="width: 130px;">
+                                                        <input type="number" step="0.01" min="0" class="form-control border-0 bg-light text-center fw-bold" asp-for="Results[i].ObtainedMarks" placeholder="0" />
+                                                        <span class="input-group-text border-0 bg-light text-muted small">/@row.TotalMarks.ToString("0")</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
                                 {
                                     <tr>
-                                        <td class="ps-4 fw-bold text-primary">#@student.StudentID</td>
-                                        <td>
-                                            <div class="fw-bold">@student.Name</div>
-                                            <div class="text-muted small">@student.Admission?.Class - @student.Admission?.Section</div>
-                                        </td>
-                                        <td>@student.Parent?.FatherName</td>
-                                        <td>
-                                            <div class="d-flex align-items-center gap-2">
-                                                <select class="form-select form-select-sm border-0 bg-light" style="width: 100px; border-radius: 8px;">
-                                                    <option>Present</option>
-                                                    <option>Absent</option>
-                                                    <option>Leave</option>
-                                                </select>
-                                                <div class="input-group input-group-sm">
-                                                    <input type="number" class="form-control border-0 bg-light text-center fw-bold" placeholder="00" style="width: 60px; border-radius: 8px 0 0 8px;">
-                                                    <span class="input-group-text border-0 bg-light text-muted small" style="border-radius: 0 8px 8px 0;">/100</span>
-                                                </div>
+                                        <td colspan="4" class="text-center py-5">
+                                            <div class="py-5">
+                                                <i class="fas fa-folder-open fa-4x text-light mb-3"></i>
+                                                <p class="text-muted fs-5">No student records found for the selected criteria.</p>
+                                                <p class="text-muted small">Choose a class and click Fetch Students.</p>
                                             </div>
                                         </td>
                                     </tr>
                                 }
-                            }
-                            else
-                            {
-                                <tr>
-                                    <td colspan="4" class="text-center py-5">
-                                        <div class="py-5">
-                                            <i class="fas fa-folder-open fa-4x text-light mb-3"></i>
-                                            <p class="text-muted fs-5">No student records found for the selected criteria.</p>
-                                            <p class="text-muted small">Please adjust your filters and try again.</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
+                            </tbody>
+                        </table>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

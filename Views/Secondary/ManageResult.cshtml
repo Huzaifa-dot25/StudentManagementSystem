@@ -1,6 +1,21 @@
-@model IEnumerable<StudentManagementSystem.Models.Student>
+@model StudentManagementSystem.Models.ManageResultsPageViewModel
 @{
     ViewData["Title"] = "Manage Results";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show rounded-3 mb-3" role="alert">
+        <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show rounded-3 mb-3" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
 }
 
 <div class="card border-0 shadow-sm manage-results-zoom">
@@ -9,20 +24,26 @@
     </div>
     <div class="card-body p-0">
         <div class="row g-0">
-            <!-- Filter Sidebar -->
             <div class="col-md-3 border-end bg-light p-4">
                 <h6 class="fw-bold mb-4 text-muted small uppercase">Examination Filters</h6>
                 <form asp-action="ManageResult" method="get" class="zoom-form">
                     <div class="mb-3">
                         <label class="form-label fw-bold small">Session</label>
                         <select name="session" class="form-select border-0 shadow-sm" onchange="this.form.submit()">
-                            <option value="">-- Choose Session --</option>
-                            @if (ViewBag.Sessions != null) {
-                                @foreach (var s in ViewBag.Sessions) {
-                                    <option value="@s" selected="@(Context.Request.Query["session"].ToString() == s)">@s</option>
+                            <option value="">-- All sessions --</option>
+                            @if (ViewBag.Sessions != null)
+                            {
+                                @foreach (var s in ViewBag.Sessions)
+                                {
+                                    if (Model.Session == s)
+                                    {
+                                        <option value="@s" selected>@s</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@s">@s</option>
+                                    }
                                 }
-                            } else {
-                                <option>2025 - 2026</option>
                             }
                         </select>
                     </div>
@@ -30,22 +51,82 @@
                         <label class="form-label fw-bold small">Class</label>
                         <select name="className" class="form-select border-0 shadow-sm" onchange="this.form.submit()">
                             <option value="">-- Select Class --</option>
-                            @foreach (var c in ViewBag.Classes) { <option value="@c" selected="@(Context.Request.Query["className"].ToString() == c)">@c</option> }
+                            @foreach (var c in ViewBag.Classes)
+                            {
+                                if (Model.ClassName == c)
+                                {
+                                    <option value="@c" selected>@c</option>
+                                }
+                                else
+                                {
+                                    <option value="@c">@c</option>
+                                }
+                            }
                         </select>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold small">Section</label>
                         <select name="section" class="form-select border-0 shadow-sm">
-                            <option value="">-- Select Section --</option>
-                            @foreach (var s in ViewBag.Sections) { <option value="@s" selected="@(Context.Request.Query["section"].ToString() == s)">@s</option> }
+                            <option value="">-- All sections --</option>
+                            @foreach (var s in ViewBag.Sections)
+                            {
+                                if (Model.Section == s)
+                                {
+                                    <option value="@s" selected>@s</option>
+                                }
+                                else
+                                {
+                                    <option value="@s">@s</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">Term</label>
+                        <select name="term" class="form-select border-0 shadow-sm">
+                            @foreach (var t in ViewBag.Terms)
+                            {
+                                if (Model.Term == t)
+                                {
+                                    <option value="@t" selected>@t</option>
+                                }
+                                else
+                                {
+                                    <option value="@t">@t</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">Exam type</label>
+                        <select name="examType" class="form-select border-0 shadow-sm">
+                            @foreach (var e in ViewBag.ExamTypes)
+                            {
+                                if (Model.ExamType == e)
+                                {
+                                    <option value="@e" selected>@e</option>
+                                }
+                                else
+                                {
+                                    <option value="@e">@e</option>
+                                }
+                            }
                         </select>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold small">Subject</label>
                         <select name="subject" class="form-select border-0 shadow-sm">
-                            <option value="">Mathematics</option>
-                            <option value="">English</option>
-                            <option value="">Science</option>
+                            @foreach (var sub in ViewBag.Subjects)
+                            {
+                                if (Model.Subject == sub)
+                                {
+                                    <option value="@sub" selected>@sub</option>
+                                }
+                                else
+                                {
+                                    <option value="@sub">@sub</option>
+                                }
+                            }
                         </select>
                     </div>
                     <button type="submit" class="btn btn-primary w-100 mt-2 shadow-sm rounded-pill">
@@ -54,77 +135,96 @@
                 </form>
             </div>
 
-            <!-- Student List -->
             <div class="col-md-9 p-4">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <div>
-                        <span class="badge bg-soft-danger text-danger me-2">Ignore</span>
-                        <span class="badge bg-soft-success text-success me-2">Present</span>
-                        <span class="badge bg-soft-warning text-warning">Pending</span>
-                    </div>
-                    <button class="btn btn-success rounded-pill px-4 shadow-sm fw-bold">
-                        <i class="fas fa-save me-2"></i>Save All Results
-                    </button>
-                </div>
+                <form asp-action="SaveResults" method="post">
+                    @Html.AntiForgeryToken()
 
-                <div class="scrollable-table-container shadow-sm rounded border">
-                    <table class="table table-hover align-middle mb-0 zoomed-table">
-                        <thead class="bg-light sticky-top">
-                            <tr>
-                                <th class="ps-4" style="width: 60%">Status & Marks</th>
-                                <th>Student Details</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if (Model != null && Model.Any())
-                            {
-                                @foreach (var student in Model)
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <span class="badge bg-soft-danger text-danger me-2">Ignore</span>
+                            <span class="badge bg-soft-success text-success me-2">Present</span>
+                            <span class="badge bg-soft-warning text-warning">Pending</span>
+                        </div>
+                        <button type="submit" class="btn btn-success rounded-pill px-4 shadow-sm fw-bold">
+                            <i class="fas fa-save me-2"></i>Save All Results
+                        </button>
+                    </div>
+
+                    <div class="scrollable-table-container shadow-sm rounded border">
+                        <table class="table table-hover align-middle mb-0 zoomed-table">
+                            <thead class="bg-light sticky-top">
+                                <tr>
+                                    <th class="ps-4" style="width: 60%">Status & Marks</th>
+                                    <th>Student Details</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.Results != null && Model.Results.Any())
+                                {
+                                    @for (var i = 0; i < Model.Results.Count; i++)
+                                    {
+                                        var row = Model.Results[i];
+                                        var st = row.Student;
+                                        <tr>
+                                            <td class="ps-4">
+                                                <input type="hidden" asp-for="Results[i].Id" />
+                                                <input type="hidden" asp-for="Results[i].StudentID" />
+                                                <input type="hidden" asp-for="Results[i].Session" />
+                                                <input type="hidden" asp-for="Results[i].Class" />
+                                                <input type="hidden" asp-for="Results[i].Section" />
+                                                <input type="hidden" asp-for="Results[i].Term" />
+                                                <input type="hidden" asp-for="Results[i].ExamType" />
+                                                <input type="hidden" asp-for="Results[i].Subject" />
+                                                <input type="hidden" asp-for="Results[i].SubSubject" />
+                                                <input type="hidden" asp-for="Results[i].ExamDate" />
+                                                <input type="hidden" asp-for="Results[i].DeclarationDate" />
+                                                <input type="hidden" asp-for="Results[i].TotalMarks" />
+                                                <input type="hidden" asp-for="Results[i].IsAnnounced" />
+
+                                                <div class="d-flex align-items-center gap-3 flex-wrap">
+                                                    <div class="btn-group btn-group-sm rounded-pill overflow-hidden border shadow-sm" role="group">
+                                                        <input type="radio" class="btn-check" name="Results[@i].Status" value="Ignore" id="sr_stat_ignore_@i" @(row.Status == "Ignore" ? "checked" : null) />
+                                                        <label class="btn btn-outline-danger border-0 px-3" for="sr_stat_ignore_@i">Ignore</label>
+
+                                                        <input type="radio" class="btn-check" name="Results[@i].Status" value="Present" id="sr_stat_present_@i" @((string.IsNullOrEmpty(row.Status) || row.Status == "Present" || row.Status == "Absent") ? "checked" : null) />
+                                                        <label class="btn btn-outline-success border-0 px-3" for="sr_stat_present_@i">Present</label>
+
+                                                        <input type="radio" class="btn-check" name="Results[@i].Status" value="Pending" id="sr_stat_pending_@i" @(row.Status == "Pending" ? "checked" : null) />
+                                                        <label class="btn btn-outline-warning border-0 px-3" for="sr_stat_pending_@i">Pending</label>
+                                                    </div>
+                                                    <div class="input-group input-group-sm" style="width: 140px;">
+                                                        <input type="number" step="0.01" min="0" class="form-control border-0 bg-light fw-bold" asp-for="Results[i].ObtainedMarks" placeholder="Marks" />
+                                                        <span class="input-group-text border-0 bg-light text-muted small">/ @row.TotalMarks.ToString("0")</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="fw-bold text-dark">@(st?.Name ?? "Student")</div>
+                                                <div class="text-muted extra-small">ID: #@row.StudentID @(st?.Admission?.RollNo != null ? $"· {st.Admission.RollNo}" : "")</div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
                                 {
                                     <tr>
-                                        <td class="ps-4">
-                                            <div class="d-flex align-items-center gap-3">
-                                                <div class="btn-group btn-group-sm rounded-pill overflow-hidden border shadow-sm">
-                                                    <input type="radio" class="btn-check" name="status_@student.StudentID" id="ignore_@student.StudentID">
-                                                    <label class="btn btn-outline-danger border-0 px-3" for="ignore_@student.StudentID">Ignore</label>
-                                                    
-                                                    <input type="radio" class="btn-check" name="status_@student.StudentID" id="present_@student.StudentID" checked>
-                                                    <label class="btn btn-outline-success border-0 px-3" for="present_@student.StudentID">Present</label>
-                                                    
-                                                    <input type="radio" class="btn-check" name="status_@student.StudentID" id="pending_@student.StudentID">
-                                                    <label class="btn btn-outline-warning border-0 px-3" for="pending_@student.StudentID">Pending</label>
-                                                </div>
-                                                <div class="input-group input-group-sm" style="width: 120px;">
-                                                    <input type="number" class="form-control border-0 bg-light fw-bold" placeholder="Marks" />
-                                                    <span class="input-group-text border-0 bg-light text-muted small">/ 100</span>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="fw-bold text-dark">@student.Name</div>
-                                            <div class="text-muted extra-small">ID: #@student.StudentID</div>
+                                        <td colspan="2" class="text-center py-5">
+                                            <i class="fas fa-users-slash fa-3x text-muted opacity-25 mb-3"></i>
+                                            <p class="text-muted">Choose a class (and optional session/section) and click Apply Filters.</p>
                                         </td>
                                     </tr>
                                 }
-                            }
-                            else
-                            {
-                                <tr>
-                                    <td colspan="2" class="text-center py-5">
-                                        <i class="fas fa-users-slash fa-3x text-muted opacity-25 mb-3"></i>
-                                        <p class="text-muted">Select filters to load students</p>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
+                            </tbody>
+                        </table>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 </div>
 
 <style>
-    .manage-results-zoom { font-size: 1.1rem; } /* Zoomed in feel */
+    .manage-results-zoom { font-size: 1.1rem; }
     .zoomed-table td, .zoomed-table th { padding: 1.25rem 1rem; }
     .scrollable-table-container { height: 600px; overflow-y: auto; background: white; }
     .bg-soft-danger { background-color: #ffeaea; }
@@ -133,7 +233,7 @@
     .extra-small { font-size: 0.75rem; }
     .uppercase { text-transform: uppercase; letter-spacing: 1px; }
     .zoom-form .form-label { font-size: 0.9rem; }
-    .btn-group .btn-outline-success:checked + label { background-color: #28a745; color: white; }
-    .btn-group .btn-outline-danger:checked + label { background-color: #dc3545; color: white; }
-    .btn-group .btn-outline-warning:checked + label { background-color: #ffc107; color: white; }
+    .btn-group .btn-check:checked + .btn-outline-success { background-color: #28a745; color: white; }
+    .btn-group .btn-check:checked + .btn-outline-danger { background-color: #dc3545; color: white; }
+    .btn-group .btn-check:checked + .btn-outline-warning { background-color: #ffc107; color: #212529; }
 </style>
