@@ -20,16 +20,16 @@ builder.Services.AddControllersWithViews(options =>
         new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build()));
 });
 
-builder.Services.Configure<OpenAiOptions>(builder.Configuration.GetSection(OpenAiOptions.SectionName));
+builder.Services.Configure<GeminiOptions>(builder.Configuration.GetSection(GeminiOptions.SectionName));
 builder.Services.Configure<AiOptions>(builder.Configuration.GetSection(AiOptions.SectionName));
-builder.Services.PostConfigure<OpenAiOptions>(o =>
+builder.Services.PostConfigure<GeminiOptions>(o =>
 {
-    var envKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+    var envKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY");
     if (!string.IsNullOrWhiteSpace(envKey))
         o.ApiKey = envKey;
 });
 
-builder.Services.AddHttpClient<IOpenAiClient, OpenAiClient>();
+builder.Services.AddHttpClient<IGeminiClient, GeminiAIService>();
 builder.Services.AddScoped<IAiSecurityContextFactory, AiSecurityContextFactory>();
 builder.Services.AddScoped<IAiInputGuard, AiInputGuard>();
 builder.Services.AddScoped<IAiIntentInterpreter, AiIntentInterpreter>();

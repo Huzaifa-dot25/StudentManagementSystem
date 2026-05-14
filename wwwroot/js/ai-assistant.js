@@ -13,11 +13,45 @@
 
     let conversationId = null;
 
-    function authHeaders() {
-        const headers = { 'Content-Type': 'application/json' };
-        const t = localStorage.getItem('token');
-        if (t) headers['Authorization'] = 'Bearer ' + t;
-        return headers;
+    function getAuthToken() {
+        // Try localStorage first
+        let t = localStorage.getItem('token');
+        if (t) return t;
+
+        // Fallback to cookie
+        const match = document.cookie.match(new RegExp('(^| )jwt_token=([^;]+)'));
+        if (match) return decodeURIComponent(match[2]);
+
+        return null;
+    }
+
+    async function apiFetch(url, options = {}) {
+        const token = getAuthToken();
+        const headers = {
+            'Content-Type': 'application/json',
+            ...(options.headers || {})
+        };
+
+        if (token) {
+            headers['Authorization'] = 'Bearer ' + token;
+        }
+
+        const res = await fetch(url, {
+            ...options,
+            credentials: 'include',
+            headers: headers
+        });
+
+        if (res.status === 401) {
+            throw new Error('Your session has expired. Please log in again.');
+        }
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            throw new Error(data.error || res.statusText || 'Request failed');
+        }
+
+        return data;
     }
 
     function appendBubble(role, text) {
@@ -51,18 +85,14 @@
         appendBubble('user', text);
         setTyping(true);
         try {
-            const res = await fetch('/api/ai/chat/message', {
+            const data = await apiFetch('/api/ai/chat/message', {
                 method: 'POST',
-                credentials: 'include',
-                headers: authHeaders(),
                 body: JSON.stringify({ conversationId: conversationId, message: text })
             });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || res.statusText);
             conversationId = data.conversationId;
             appendBubble('assistant', data.reply || '');
         } catch (e) {
-            appendBubble('assistant', 'Sorry, I could not complete that request. ' + (e.message || ''));
+            appendBubble('assistant', '⚠️ ' + e.message);
         } finally {
             setTyping(false);
         }
@@ -77,17 +107,23 @@
 
     async function exportReport(body) {
         try {
+            const token = getAuthToken();
             const res = await fetch('/api/ai/reports/export', {
                 method: 'POST',
                 credentials: 'include',
-                headers: authHeaders(),
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': token ? 'Bearer ' + token : ''
+                },
                 body: JSON.stringify(body)
             });
+
             if (!res.ok) {
                 const err = await res.json().catch(() => ({}));
                 alert(err.error || 'Export failed');
                 return;
             }
+
             const blob = await res.blob();
             const cd = res.headers.get('Content-Disposition');
             let name = 'download';

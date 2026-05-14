@@ -10,12 +10,12 @@ public interface IAiResponseFormatter
 
 public sealed class AiResponseFormatter : IAiResponseFormatter
 {
-    private readonly IOpenAiClient _openAi;
+    private readonly IGeminiClient _gemini;
     private readonly ILogger<AiResponseFormatter> _logger;
 
-    public AiResponseFormatter(IOpenAiClient openAi, ILogger<AiResponseFormatter> logger)
+    public AiResponseFormatter(IGeminiClient gemini, ILogger<AiResponseFormatter> logger)
     {
-        _openAi = openAi;
+        _gemini = gemini;
         _logger = logger;
     }
 
@@ -25,7 +25,7 @@ public sealed class AiResponseFormatter : IAiResponseFormatter
             ? "null"
             : JsonSerializer.Serialize(dataPayload, new JsonSerializerOptions { WriteIndented = false });
 
-        var system = $"""
+        var systemInstruction = $"""
 You are SMS AI Assistant. Answer clearly in Markdown when helpful (tables optional).
 Rules:
 - Use ONLY the JSON facts in DATA_JSON for numeric lists and names. Never invent students, marks, or amounts.
@@ -41,17 +41,17 @@ DATA_JSON:
 
         try
         {
-            return await _openAi.ChatCompletionAsync(new List<(string, string)>
+            return await _gemini.GenerateContentAsync(new List<(string, string)>
             {
-                ("system", system),
+                ("user", "System Instruction: " + systemInstruction),
                 ("user", userMessage)
             }, requireJsonObject: false, cancellationToken);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Formatter OpenAI call failed; returning structured fallback.");
+            _logger.LogWarning(ex, "Formatter Gemini call failed; returning structured fallback.");
             return dataPayload == null
-                ? "I could not reach the AI service right now. Please verify OpenAI configuration."
+                ? "I could not reach the AI service right now. Please verify Gemini configuration."
                 : $"Here is the structured data I retrieved (AI formatting unavailable):\n\n```json\n{dataJson}\n```";
         }
     }
