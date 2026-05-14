@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using StudentManagementSystem.Models;
+using StudentManagementSystem.Models.AI;
 
 namespace StudentManagementSystem.Data
 {
@@ -24,6 +25,8 @@ namespace StudentManagementSystem.Data
         public DbSet<FeeScheduleItem> FeeScheduleItems { get; set; }
         public DbSet<StudentResult> StudentResults { get; set; }
         public DbSet<TeacherAssignment> TeacherAssignments { get; set; }
+        public DbSet<AiConversation> AiConversations { get; set; }
+        public DbSet<AiChatMessageEntity> AiChatMessages { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -71,6 +74,23 @@ namespace StudentManagementSystem.Data
                 .HasOne(i => i.FeeSchedule)
                 .WithMany(s => s.Items)
                 .HasForeignKey(i => i.FeeScheduleId);
+
+            modelBuilder.Entity<AiConversation>(e =>
+            {
+                e.HasKey(x => x.Id);
+                e.HasIndex(x => x.UserId);
+                e.Property(x => x.Title).HasMaxLength(200);
+            });
+
+            modelBuilder.Entity<AiChatMessageEntity>(e =>
+            {
+                e.HasKey(x => x.Id);
+                e.Property(x => x.Role).HasMaxLength(32);
+                e.HasOne(x => x.Conversation)
+                    .WithMany(c => c.Messages)
+                    .HasForeignKey(x => x.ConversationId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
         }
     }
 }

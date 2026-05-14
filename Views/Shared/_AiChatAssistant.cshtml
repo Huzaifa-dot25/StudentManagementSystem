@@ -1,0 +1,31 @@
+@if (User?.Identity?.IsAuthenticated == true && User.IsInRole("Admin"))
+{
+    <div id="ai-chat-fab" class="shadow-lg border-0 rounded-circle bg-gradient-ai text-white d-flex align-items-center justify-content-center position-fixed"
+         style="width:56px;height:56px;bottom:24px;right:24px;z-index:1080;cursor:pointer;"
+         title="AI Assistant">
+        <i class="fa-solid fa-wand-magic-sparkles fs-5"></i>
+    </div>
+
+    <div id="ai-chat-panel" class="d-none position-fixed bg-white shadow-lg border rounded-4 d-flex flex-column"
+         style="width:min(420px, 96vw); height:min(560px, 80vh); bottom:96px; right:24px; z-index:1080;">
+        <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom bg-dark text-white rounded-top-4">
+            <div class="fw-bold small"><i class="fa-solid fa-robot me-2"></i>SMS AI Assistant</div>
+            <button type="button" id="ai-chat-close" class="btn btn-sm btn-outline-light border-0"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="px-3 py-2 border-bottom small bg-light d-flex gap-2 flex-wrap">
+            <button type="button" id="ai-export-xlsx" class="btn btn-sm btn-outline-secondary">Fee defaulters (Excel)</button>
+            <button type="button" id="ai-export-pdf" class="btn btn-sm btn-outline-secondary">Executive summary (PDF)</button>
+        </div>
+        <div id="ai-chat-messages" class="flex-grow-1 overflow-auto p-3 small" style="background:#fafbff;"></div>
+        <div id="ai-chat-typing" class="d-none px-3 pb-1 text-muted small"><i class="fa-solid fa-ellipsis fa-bounce me-1"></i>Thinking…</div>
+        <div class="p-2 border-top d-flex gap-2">
+            <textarea id="ai-chat-input" class="form-control form-control-sm" rows="2" placeholder="Ask about fees, results, students…"></textarea>
+            <button type="button" id="ai-chat-send" class="btn btn-primary btn-sm align-self-end px-3"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <style>
+        .bg-gradient-ai { background: linear-gradient(135deg, #4f46e5, #7c3aed); }
+    </style>
+    <script src="~/js/ai-assistant.js" asp-append-version="true"></script>
+}

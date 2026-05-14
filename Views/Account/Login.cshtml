@@ -138,7 +138,9 @@
                             localStorage.setItem('role', response.role);
                             
                             // Store in Cookie for MVC page navigation
-                            document.cookie = "jwt_token=" + response.token + "; path=/; secure; samesite=strict";
+                            var isHttps = window.location.protocol === 'https:';
+                            document.cookie = 'jwt_token=' + encodeURIComponent(response.token)
+                                + '; path=/; samesite=lax' + (isHttps ? '; secure' : '');
                             
                             if (response.role === 'Admin') {
                                 window.location.href = '/';

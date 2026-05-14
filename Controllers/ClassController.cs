@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StudentManagementSystem.Data;
@@ -5,6 +6,7 @@ using StudentManagementSystem.Models;
 
 namespace StudentManagementSystem.Controllers
 {
+    [Authorize(Policy = "CanViewStudents")]
     public class ClassController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -45,6 +47,7 @@ namespace StudentManagementSystem.Controllers
             return View(classes);
         }
 
+        [Authorize(Policy = "CanManageStudents")]
         public async Task<IActionResult> AssignStudents(string className, string section)
         {
             ViewBag.Classes = await _context.Admissions
@@ -87,6 +90,7 @@ namespace StudentManagementSystem.Controllers
         }
 
         [HttpPost]
+        [Authorize(Policy = "CanManageStudents")]
         public async Task<IActionResult> BulkAssign(int[] studentIds, string targetClass, string targetSection, string targetSession)
         {
             if (studentIds == null || studentIds.Length == 0)

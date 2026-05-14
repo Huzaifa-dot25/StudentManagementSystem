@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StudentManagementSystem.Data;
@@ -5,6 +6,7 @@ using StudentManagementSystem.Models;
 
 namespace StudentManagementSystem.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class SeedController : Controller
     {
         private readonly ApplicationDbContext _context;
