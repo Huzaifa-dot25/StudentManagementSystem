@@ -5,3 +5,4 @@ obj/
 *.sln.doccache
 .vs/
 /uploads/
+appsettings.Development.json

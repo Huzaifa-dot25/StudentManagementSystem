@@ -31,17 +31,27 @@ public sealed class GeminiAIService : IGeminiClient
 
         var url = $"{_opt.BaseUrl.TrimEnd('/')}/models/{_opt.Model}:generateContent?key={_opt.ApiKey.Trim()}";
 
+        // Separate system instructions from conversation turns.
+        // Gemini requires alternating user/model turns — consecutive user messages cause a 400 error.
+        // System messages are extracted and sent via the dedicated systemInstruction field.
+        var systemParts = new List<GeminiPart>();
         var geminiMessages = new List<GeminiContent>();
+
         foreach (var (role, content) in messages)
         {
-            var geminiRole = role.ToLower() switch
-            {
-                "system" => "user", // Gemini beta doesn't have a distinct system role in the same way, often prepended to user
-                "assistant" => "model",
-                _ => "user"
-            };
+            var lowerRole = role.ToLower();
 
-            // If system message, we'll handle it specially if needed, but for now just map roles
+            // Callers that prepend "System Instruction: ..." as a user message — extract it properly.
+            if (lowerRole == "system" || (lowerRole == "user" && content.StartsWith("System Instruction:", StringComparison.OrdinalIgnoreCase)))
+            {
+                var text = lowerRole == "user"
+                    ? content["System Instruction:".Length..].TrimStart()
+                    : content;
+                systemParts.Add(new GeminiPart { Text = text });
+                continue;
+            }
+
+            var geminiRole = lowerRole == "assistant" ? "model" : "user";
             geminiMessages.Add(new GeminiContent
             {
                 Role = geminiRole,
@@ -49,9 +59,16 @@ public sealed class GeminiAIService : IGeminiClient
             });
         }
 
+        // Gemini requires at least one user turn.
+        if (geminiMessages.Count == 0)
+            throw new InvalidOperationException("No user message provided to Gemini.");
+
         var payload = new GeminiRequest
         {
             Contents = geminiMessages,
+            SystemInstruction = systemParts.Count > 0
+                ? new GeminiContent { Parts = systemParts }
+                : null,
             GenerationConfig = new GeminiGenerationConfig
             {
                 Temperature = _opt.Temperature,
@@ -123,6 +140,7 @@ public sealed class GeminiAIService : IGeminiClient
     private sealed class GeminiRequest
     {
         public List<GeminiContent> Contents { get; set; } = new();
+        public GeminiContent? SystemInstruction { get; set; }
         public GeminiGenerationConfig? GenerationConfig { get; set; }
     }
 

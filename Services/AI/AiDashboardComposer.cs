@@ -100,7 +100,7 @@ Notifications planned: {notifications.Count}. Do not invent numbers beyond these
 """;
             narrative = await _gemini.GenerateContentAsync(new List<(string, string)>
             {
-                ("user", "System Instruction: You are a concise school analytics narrator. Markdown allowed."),
+                ("system", "You are a concise school analytics narrator. Markdown allowed."),
                 ("user", summaryPrompt)
             }, requireJsonObject: false, cancellationToken);
         }

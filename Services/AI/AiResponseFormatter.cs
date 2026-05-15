@@ -43,7 +43,7 @@ DATA_JSON:
         {
             return await _gemini.GenerateContentAsync(new List<(string, string)>
             {
-                ("user", "System Instruction: " + systemInstruction),
+                ("system", systemInstruction),
                 ("user", userMessage)
             }, requireJsonObject: false, cancellationToken);
         }

@@ -65,7 +65,7 @@ Caller context (for intent only): admin={security.IsAdmin}, teacherScoped={secur
 
         var raw = await _gemini.GenerateContentAsync(new List<(string, string)>
         {
-            ("user", "System Instruction: " + InterpreterSystemPrompt),
+            ("system", InterpreterSystemPrompt),
             ("user", user)
         }, requireJsonObject: true, cancellationToken);
 
