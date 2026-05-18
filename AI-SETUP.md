@@ -4,14 +4,14 @@ This project is **ASP.NET Core MVC** with **Razor** (not a separate React SPA). 
 
 ## Configuration
 
-1. **Gemini API key (required for chat & narrative formatting)**
-   - Preferred: set the environment variable `GEMINI_API_KEY` on the machine or in your hosting profile.
-   - Alternative: set `Gemini:ApiKey` in `appsettings.Development.json` (do **not** commit secrets to git).
+1. **Groq API key (required for chat & narrative formatting)**
+   - Preferred: set the environment variable `GROQ_API_KEY` (or `GEMINI_API_KEY` for backward compatibility) on the machine or in your hosting profile.
+   - Alternative: set `Groq:ApiKey` in `appsettings.json` (do **not** commit secrets to git).
 
 2. **appsettings**
-   - `Gemini:Model` defaults to `gemini-1.5-pro` (override in appsettings if needed, e.g. `gemini-1.5-flash-latest`).
-   - `Gemini:Enabled` can be set to `false` to disable outbound AI calls (orchestrator will fail fast with a clear message).
-   - `Gemini:Temperature`, `Gemini:MaxOutputTokens` are tunable.
+   - `Groq:Model` defaults to `llama-3.3-70b-versatile` (override in appsettings if needed).
+   - `Groq:Enabled` can be set to `false` to disable outbound AI calls (orchestrator will fail fast with a clear message).
+   - `Groq:Temperature`, `Groq:MaxOutputTokens` are tunable.
 
 3. **Database**
    After pulling changes, apply the migration (stop `dotnet run` first if the build output is locked):
@@ -25,7 +25,7 @@ This project is **ASP.NET Core MVC** with **Razor** (not a separate React SPA). 
 ## Architecture (security)
 
 - The model **never** executes raw SQL from the LLM.
-- Flow: **user message → `AiInputGuard` (sanitize/block SQL) → `AiIntentInterpreter` (Gemini → JSON intent) → `AiSecureDataExecutor` (whitelist EF queries) → `AiResponseFormatter` (Gemini → natural language from JSON facts only).**
+- Flow: **user message → `AiInputGuard` (sanitize/block SQL) → `AiIntentInterpreter` (Groq → JSON intent) → `AiSecureDataExecutor` (whitelist EF queries) → `AiResponseFormatter` (Groq → natural language from JSON facts only).**
 - **Rate limiting**: fixed window policy `ai` (40 requests / minute / user id or IP).
 - **Role / claim scope**: `AiSecurityContextFactory` resolves Admin, permission claims (`Students.View`, `Fees.View`, `Results.View`), optional **`StudentId` claim** for student-self scope, and **teacher scope** inferred from `TeacherAssignments.TeacherName` matching the signed-in user name or email local-part.
 

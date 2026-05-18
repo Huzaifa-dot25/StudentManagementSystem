@@ -10,12 +10,12 @@ public interface IAiResponseFormatter
 
 public sealed class AiResponseFormatter : IAiResponseFormatter
 {
-    private readonly IGeminiClient _gemini;
+    private readonly IGroqClient _groq;
     private readonly ILogger<AiResponseFormatter> _logger;
 
-    public AiResponseFormatter(IGeminiClient gemini, ILogger<AiResponseFormatter> logger)
+    public AiResponseFormatter(IGroqClient groq, ILogger<AiResponseFormatter> logger)
     {
-        _gemini = gemini;
+        _groq = groq;
         _logger = logger;
     }
 
@@ -41,7 +41,7 @@ DATA_JSON:
 
         try
         {
-            return await _gemini.GenerateContentAsync(new List<(string, string)>
+            return await _groq.GenerateContentAsync(new List<(string, string)>
             {
                 ("system", systemInstruction),
                 ("user", userMessage)
@@ -49,9 +49,9 @@ DATA_JSON:
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Formatter Gemini call failed; returning structured fallback.");
+            _logger.LogWarning(ex, "Formatter Groq call failed; returning structured fallback.");
             return dataPayload == null
-                ? "I could not reach the AI service right now. Please verify Gemini configuration."
+                ? "I could not reach the AI service right now. Please verify Groq configuration."
                 : $"Here is the structured data I retrieved (AI formatting unavailable):\n\n```json\n{dataJson}\n```";
         }
     }

@@ -20,16 +20,17 @@ builder.Services.AddControllersWithViews(options =>
         new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build()));
 });
 
-builder.Services.Configure<GeminiOptions>(builder.Configuration.GetSection(GeminiOptions.SectionName));
+builder.Services.Configure<GroqOptions>(builder.Configuration.GetSection(GroqOptions.SectionName));
 builder.Services.Configure<AiOptions>(builder.Configuration.GetSection(AiOptions.SectionName));
-builder.Services.PostConfigure<GeminiOptions>(o =>
+builder.Services.PostConfigure<GroqOptions>(o =>
 {
-    var envKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY");
+    var envKey = Environment.GetEnvironmentVariable("GROQ_API_KEY")
+                 ?? Environment.GetEnvironmentVariable("GEMINI_API_KEY");
     if (!string.IsNullOrWhiteSpace(envKey))
         o.ApiKey = envKey;
 });
 
-builder.Services.AddHttpClient<IGeminiClient, GeminiAIService>();
+builder.Services.AddHttpClient<IGroqClient, GroqAIService>();
 builder.Services.AddScoped<IAiSecurityContextFactory, AiSecurityContextFactory>();
 builder.Services.AddScoped<IAiInputGuard, AiInputGuard>();
 builder.Services.AddScoped<IAiIntentInterpreter, AiIntentInterpreter>();

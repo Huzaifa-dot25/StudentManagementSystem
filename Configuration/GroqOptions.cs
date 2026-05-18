@@ -1,12 +1,12 @@
 namespace StudentManagementSystem.Configuration;
 
-public sealed class GeminiOptions
+public sealed class GroqOptions
 {
-    public const string SectionName = "Gemini";
+    public const string SectionName = "Groq";
 
     public string ApiKey { get; set; } = string.Empty;
-    public string Model { get; set; } = "gemini-1.5-pro";
-    public string BaseUrl { get; set; } = "https://generativelanguage.googleapis.com/v1beta/";
+    public string Model { get; set; } = "llama-3.3-70b-versatile";
+    public string BaseUrl { get; set; } = "https://api.groq.com/openai/v1/";
     public bool Enabled { get; set; } = true;
     public double Temperature { get; set; } = 0.2;
     public int MaxOutputTokens { get; set; } = 2048;

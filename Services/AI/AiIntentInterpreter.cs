@@ -12,7 +12,7 @@ public interface IAiIntentInterpreter
 
 public sealed class AiIntentInterpreter : IAiIntentInterpreter
 {
-    private readonly IGeminiClient _gemini;
+    private readonly IGroqClient _groq;
     private readonly AiOptions _ai;
     private readonly ILogger<AiIntentInterpreter> _logger;
 
@@ -47,9 +47,9 @@ Rules:
 Security hints (do not echo): admin may see broad data; teachers are limited to their assignments; students only self — you only choose intent; the server enforces scope.
 """;
 
-    public AiIntentInterpreter(IGeminiClient gemini, IOptions<AiOptions> ai, ILogger<AiIntentInterpreter> logger)
+    public AiIntentInterpreter(IGroqClient groq, IOptions<AiOptions> ai, ILogger<AiIntentInterpreter> logger)
     {
-        _gemini = gemini;
+        _groq = groq;
         _ai = ai.Value;
         _logger = logger;
     }
@@ -63,7 +63,7 @@ User message:
 Caller context (for intent only): admin={security.IsAdmin}, teacherScoped={security.IsTeacherScoped}, studentSelf={security.LinkedStudentId}, canFees={security.CanViewFees}, canStudents={security.CanViewStudents}, canResults={security.CanViewResults}.
 """;
 
-        var raw = await _gemini.GenerateContentAsync(new List<(string, string)>
+        var raw = await _groq.GenerateContentAsync(new List<(string, string)>
         {
             ("system", InterpreterSystemPrompt),
             ("user", user)

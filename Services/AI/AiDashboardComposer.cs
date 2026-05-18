@@ -16,14 +16,14 @@ public sealed class AiDashboardComposer : IAiDashboardComposer
 {
     private readonly ApplicationDbContext _db;
     private readonly AiOptions _ai;
-    private readonly IGeminiClient _gemini;
+    private readonly IGroqClient _groq;
     private readonly ILogger<AiDashboardComposer> _logger;
 
-    public AiDashboardComposer(ApplicationDbContext db, IOptions<AiOptions> ai, IGeminiClient gemini, ILogger<AiDashboardComposer> logger)
+    public AiDashboardComposer(ApplicationDbContext db, IOptions<AiOptions> ai, IGroqClient groq, ILogger<AiDashboardComposer> logger)
     {
         _db = db;
         _ai = ai.Value;
-        _gemini = gemini;
+        _groq = groq;
         _logger = logger;
     }
 
@@ -98,7 +98,7 @@ public sealed class AiDashboardComposer : IAiDashboardComposer
 Summarize in 2 short paragraphs for a school admin dashboard. Cards: {string.Join("; ", cards.Select(c => c.Title + "=" + c.Value))}.
 Notifications planned: {notifications.Count}. Do not invent numbers beyond these facts.
 """;
-            narrative = await _gemini.GenerateContentAsync(new List<(string, string)>
+            narrative = await _groq.GenerateContentAsync(new List<(string, string)>
             {
                 ("system", "You are a concise school analytics narrator. Markdown allowed."),
                 ("user", summaryPrompt)
@@ -106,7 +106,7 @@ Notifications planned: {notifications.Count}. Do not invent numbers beyond these
         }
         catch (Exception ex)
         {
-            _logger.LogDebug(ex, "Dashboard narrative skipped (Gemini unavailable).");
+            _logger.LogDebug(ex, "Dashboard narrative skipped (Groq unavailable).");
         }
 
         return new AiDashboardDto { Cards = cards, NarrativeSummary = narrative, SuggestedNotifications = notifications };
