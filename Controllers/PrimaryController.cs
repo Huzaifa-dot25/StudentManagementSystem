@@ -322,8 +322,154 @@ namespace StudentManagementSystem.Controllers
             return RedirectToAction(nameof(TeacherAssignment));
         }
 
-        public IActionResult ManageStatements()        => View();
-        public IActionResult ViewStatementsByClass()   => View();
+        public async Task<IActionResult> ManageStatements(string? search)
+        {
+            var query = _context.DescriptiveStatements.AsNoTracking();
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                search = search.Trim();
+                query = query.Where(s => s.Category.Contains(search) || s.StatementText.Contains(search));
+            }
+            
+            var statements = await query.ToListAsync();
+            ViewBag.SearchQuery = search;
+            return View(statements);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Policy = "CanManageResults")]
+        public async Task<IActionResult> SaveStatement(DescriptiveStatement model)
+        {
+            if (ModelState.IsValid)
+            {
+                if (model.Id == 0)
+                {
+                    _context.DescriptiveStatements.Add(model);
+                }
+                else
+                {
+                    _context.DescriptiveStatements.Update(model);
+                }
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Statement saved successfully!";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Failed to save statement. Please check validation errors.";
+            }
+            return RedirectToAction(nameof(ManageStatements));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Policy = "CanManageResults")]
+        public async Task<IActionResult> DeleteStatement(int id)
+        {
+            var statement = await _context.DescriptiveStatements.FindAsync(id);
+            if (statement != null)
+            {
+                _context.DescriptiveStatements.Remove(statement);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Statement deleted successfully!";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Statement not found.";
+            }
+            return RedirectToAction(nameof(ManageStatements));
+        }
+
+        public async Task<IActionResult> ViewStatementsByClass(string? className, string? section, string? session, string? term)
+        {
+            await PopulateResultDropdowns();
+
+            // Load the descriptive statements suggestion bank
+            var statementBank = await _context.DescriptiveStatements.AsNoTracking().ToListAsync();
+            ViewBag.StatementBank = statementBank;
+
+            // Load the list of students for the filtered class/section
+            var students = new List<Student>();
+            var feedbacks = new List<StudentFeedback>();
+
+            bool anyFilter = !string.IsNullOrEmpty(className) || !string.IsNullOrEmpty(section);
+
+            if (anyFilter)
+            {
+                students = await _context.Students
+                    .Include(s => s.Admission)
+                    .Include(s => s.Parent)
+                    .Where(s => s.Admission != null && 
+                                (string.IsNullOrEmpty(className) || s.Admission.Class == className) &&
+                                (string.IsNullOrEmpty(section) || s.Admission.Section == section))
+                    .OrderBy(s => s.Admission!.RollNo)
+                    .ThenBy(s => s.Name)
+                    .ToListAsync();
+
+                var studentIds = students.Select(s => s.StudentID).ToList();
+
+                // Get existing feedbacks for these students
+                feedbacks = await _context.StudentFeedbacks
+                    .Where(f => studentIds.Contains(f.StudentID) &&
+                                (string.IsNullOrEmpty(session) || f.Session == session) &&
+                                (string.IsNullOrEmpty(term) || f.Term == term))
+                    .ToListAsync();
+            }
+
+            ViewBag.Students = students;
+            ViewBag.Feedbacks = feedbacks;
+            ViewBag.SelectedClass = className;
+            ViewBag.SelectedSection = section;
+            ViewBag.SelectedSession = string.IsNullOrEmpty(session) ? "2024 - 2025" : session;
+            ViewBag.SelectedTerm = string.IsNullOrEmpty(term) ? "Term 1" : term;
+
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Policy = "CanManageResults")]
+        public async Task<IActionResult> SaveStudentFeedback(int studentId, string session, string className, string section, string term, string academicFeedback, string behavioralFeedback, string? extracurricularFeedback)
+        {
+            if (studentId <= 0)
+            {
+                return Json(new { success = false, message = "Invalid Student ID" });
+            }
+
+            var feedback = await _context.StudentFeedbacks
+                .FirstOrDefaultAsync(f => f.StudentID == studentId && 
+                                          f.Session == session && 
+                                          f.Class == className && 
+                                          f.Section == section && 
+                                          f.Term == term);
+
+            if (feedback == null)
+            {
+                feedback = new StudentFeedback
+                {
+                    StudentID = studentId,
+                    Session = session ?? "2024 - 2025",
+                    Class = className ?? "",
+                    Section = section ?? "",
+                    Term = term ?? "Term 1",
+                    AcademicFeedback = academicFeedback ?? "",
+                    BehavioralFeedback = behavioralFeedback ?? "",
+                    ExtracurricularFeedback = extracurricularFeedback ?? ""
+                };
+                _context.StudentFeedbacks.Add(feedback);
+            }
+            else
+            {
+                feedback.AcademicFeedback = academicFeedback ?? "";
+                feedback.BehavioralFeedback = behavioralFeedback ?? "";
+                feedback.ExtracurricularFeedback = extracurricularFeedback ?? "";
+                _context.StudentFeedbacks.Update(feedback);
+            }
+
+            await _context.SaveChangesAsync();
+            return Json(new { success = true, message = "Feedback saved successfully!" });
+        }
+
 
         [Authorize(Policy = "CanManageResults")]
         [HttpPost]

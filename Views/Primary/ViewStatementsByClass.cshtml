@@ -1,92 +1,456 @@
+@model dynamic
 @{
     ViewData["Title"] = "Primary - View Statements by Class";
+    var students = ViewBag.Students as List<StudentManagementSystem.Models.Student> ?? new List<StudentManagementSystem.Models.Student>();
+    var feedbacks = ViewBag.Feedbacks as List<StudentManagementSystem.Models.StudentFeedback> ?? new List<StudentManagementSystem.Models.StudentFeedback>();
+    var statementBank = ViewBag.StatementBank as List<StudentManagementSystem.Models.DescriptiveStatement> ?? new List<StudentManagementSystem.Models.DescriptiveStatement>();
 }
 
 <div class="card border-0 shadow-sm" style="border-radius: 20px;">
     <div class="card-header bg-white py-4 px-4 border-0">
-        <h4 class="mb-1 fw-bold text-dark"><i class="fas fa-users-rectangle me-3 text-danger"></i>View Statements by Class</h4>
-        <p class="mb-0 text-muted small">Summary of descriptive feedback categorized by class and section.</p>
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <h4 class="mb-1 fw-bold text-dark"><i class="fas fa-users-rectangle me-3 text-danger"></i>View Statements by Class</h4>
+                <p class="mb-0 text-muted small">Summary of descriptive feedback categorized by class and section.</p>
+            </div>
+            @if (students.Any())
+            {
+                <button class="btn btn-danger btn-sm rounded-pill shadow-sm px-3" onclick="saveAllFeedbacks()" id="saveAllBtn">
+                    <i class="fas fa-save me-2"></i>Save All Changes
+                </button>
+            }
+        </div>
     </div>
     <div class="card-body p-4">
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <label class="form-label small fw-bold">Select Class</label>
-                <select class="form-select border-0 bg-light py-2">
-                    <option>Class 1</option>
-                    <option>Class 2</option>
-                    <option selected>Class 3</option>
+        <!-- Filter Panel -->
+        <form method="get" asp-action="ViewStatementsByClass" class="row mb-4 g-3 bg-light p-3 rounded-4 border-0 align-items-end">
+            <div class="col-md-3 col-sm-6">
+                <label class="form-label small fw-bold text-muted">Select Session</label>
+                <select name="session" class="form-select border-0 shadow-sm py-2 bg-white" style="border-radius: 10px;">
+                    @if (ViewBag.Sessions != null)
+                    {
+                        @foreach (var s in ViewBag.Sessions)
+                        {
+                            if (ViewBag.SelectedSession == s)
+                            {
+                                <option value="@s" selected>@s</option>
+                            }
+                            else
+                            {
+                                <option value="@s">@s</option>
+                            }
+                        }
+                    }
                 </select>
             </div>
-            <div class="col-md-3">
-                <label class="form-label small fw-bold">Select Section</label>
-                <select class="form-select border-0 bg-light py-2">
-                    <option>Section A</option>
-                    <option>Section B</option>
+            <div class="col-md-2 col-sm-6">
+                <label class="form-label small fw-bold text-muted">Select Term</label>
+                <select name="term" class="form-select border-0 shadow-sm py-2 bg-white" style="border-radius: 10px;">
+                    @if (ViewBag.Terms != null)
+                    {
+                        @foreach (var t in ViewBag.Terms)
+                        {
+                            if (ViewBag.SelectedTerm == t)
+                            {
+                                <option value="@t" selected>@t</option>
+                            }
+                            else
+                            {
+                                <option value="@t">@t</option>
+                            }
+                        }
+                    }
                 </select>
             </div>
-            <div class="col-md-3 d-flex align-items-end">
-                <button class="btn btn-danger w-100 py-2 rounded-pill shadow-sm"><i class="fas fa-filter me-2"></i>Filter View</button>
+            <div class="col-md-2 col-sm-6">
+                <label class="form-label small fw-bold text-muted">Select Class</label>
+                <select name="className" class="form-select border-0 shadow-sm py-2 bg-white" style="border-radius: 10px;" required>
+                    <option value="">-- Select Class --</option>
+                    @if (ViewBag.Classes != null)
+                    {
+                        @foreach (var c in ViewBag.Classes)
+                        {
+                            if (ViewBag.SelectedClass == c)
+                            {
+                                <option value="@c" selected>@c</option>
+                            }
+                            else
+                            {
+                                <option value="@c">@c</option>
+                            }
+                        }
+                    }
+                </select>
             </div>
-        </div>
+            <div class="col-md-2 col-sm-6">
+                <label class="form-label small fw-bold text-muted">Select Section</label>
+                <select name="section" class="form-select border-0 shadow-sm py-2 bg-white" style="border-radius: 10px;" required>
+                    <option value="">-- Select Section --</option>
+                    @if (ViewBag.Sections != null)
+                    {
+                        @foreach (var s in ViewBag.Sections)
+                        {
+                            if (ViewBag.SelectedSection == s)
+                            {
+                                <option value="@s" selected>@s</option>
+                            }
+                            else
+                            {
+                                <option value="@s">@s</option>
+                            }
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-danger w-100 py-2 rounded-pill shadow-sm"><i class="fas fa-filter me-2"></i>Filter View</button>
+            </div>
+        </form>
 
+        <!-- Notification container -->
+        <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050;"></div>
+
+        <!-- Student List -->
         <div class="row g-4">
             <div class="col-12">
-                <div class="card border-0 shadow-none bg-light p-4 rounded-4 mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="d-flex align-items-center">
-                            <div class="bg-white rounded-circle p-2 me-3 shadow-sm">
-                                <i class="fas fa-user-graduate text-primary"></i>
-                            </div>
-                            <h6 class="fw-bold mb-0">Ahmed Hassan <span class="text-muted small ms-2">#10293</span></h6>
-                        </div>
-                        <span class="badge bg-white text-dark shadow-sm px-3 rounded-pill">Class 3-A</span>
-                    </div>
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <div class="p-3 bg-white rounded-3 shadow-sm h-100">
-                                <label class="fw-bold text-success small mb-1"><i class="fas fa-book me-2"></i>Academic Feedback</label>
-                                <p class="small mb-0 text-muted italic">"Ahmed is showing consistent improvement in mathematics. He needs to focus more on word problems."</p>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="p-3 bg-white rounded-3 shadow-sm h-100">
-                                <label class="fw-bold text-info small mb-1"><i class="fas fa-smile me-2"></i>Behavioral Feedback</label>
-                                <p class="small mb-0 text-muted italic">"A very cooperative student who follows all class rules and helps fellow classmates."</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                @if (students.Any())
+                {
+                    @foreach (var student in students)
+                    {
+                        var studentFeedback = feedbacks.FirstOrDefault(f => f.StudentID == student.StudentID);
+                        var academicText = studentFeedback?.AcademicFeedback ?? "";
+                        var behavioralText = studentFeedback?.BehavioralFeedback ?? "";
+                        var extracurricularText = studentFeedback?.ExtracurricularFeedback ?? "";
 
-                <div class="card border-0 shadow-none bg-light p-4 rounded-4 mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="d-flex align-items-center">
-                            <div class="bg-white rounded-circle p-2 me-3 shadow-sm">
-                                <i class="fas fa-user-graduate text-primary"></i>
+                        <div class="card border-0 shadow-none bg-light p-4 rounded-4 mb-4 student-card" data-student-id="@student.StudentID">
+                            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-white rounded-circle p-2 me-3 shadow-sm d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
+                                        @if (!string.IsNullOrEmpty(student.PhotoPath))
+                                        {
+                                            <img src="@student.PhotoPath" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;" alt="Avatar" />
+                                        }
+                                        else
+                                        {
+                                            <i class="fas fa-user-graduate text-primary"></i>
+                                        }
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0">@student.Name <span class="text-muted small ms-2">Roll No: @(student.Admission?.RollNo ?? "N/A")</span></h6>
+                                        <span class="text-muted small">Father: @(student.Parent?.FatherName ?? "N/A")</span>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-white text-dark shadow-sm px-3 py-2 rounded-pill">@ViewBag.SelectedClass-@ViewBag.SelectedSection</span>
+                                    <button class="btn btn-success btn-sm rounded-pill px-3 shadow-sm btn-save-feedback" onclick="saveFeedback(@student.StudentID)">
+                                        <i class="fas fa-save me-1"></i>Save
+                                    </button>
+                                </div>
                             </div>
-                            <h6 class="fw-bold mb-0">Zoya Khan <span class="text-muted small ms-2">#10305</span></h6>
+                            
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <div class="p-3 bg-white rounded-3 shadow-sm h-100 d-flex flex-column">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <label class="fw-bold text-success small mb-0"><i class="fas fa-book me-2"></i>Academic Feedback</label>
+                                            <button class="btn btn-link btn-sm text-success p-0" onclick="showSuggestions(@student.StudentID, 'Academic Performance', 'academic-@student.StudentID')">
+                                                <i class="fas fa-lightbulb me-1"></i>Suggestions
+                                            </button>
+                                        </div>
+                                        <textarea id="academic-@student.StudentID" class="form-control border bg-light small flex-grow-1" rows="3" placeholder="Enter academic feedback or click Suggestions...">@academicText</textarea>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="p-3 bg-white rounded-3 shadow-sm h-100 d-flex flex-column">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <label class="fw-bold text-info small mb-0"><i class="fas fa-smile me-2"></i>Behavioral Feedback</label>
+                                            <button class="btn btn-link btn-sm text-info p-0" onclick="showSuggestions(@student.StudentID, 'Behavioral Conduct', 'behavioral-@student.StudentID')">
+                                                <i class="fas fa-lightbulb me-1"></i>Suggestions
+                                            </button>
+                                        </div>
+                                        <textarea id="behavioral-@student.StudentID" class="form-control border bg-light small flex-grow-1" rows="3" placeholder="Enter behavioral feedback or click Suggestions...">@behavioralText</textarea>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="p-3 bg-white rounded-3 shadow-sm h-100 d-flex flex-column">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <label class="fw-bold text-warning small mb-0"><i class="fas fa-star me-2"></i>Extracurricular Feedback</label>
+                                            <button class="btn btn-link btn-sm text-warning p-0" onclick="showSuggestions(@student.StudentID, 'Extracurricular', 'extra-@student.StudentID')">
+                                                <i class="fas fa-lightbulb me-1"></i>Suggestions
+                                            </button>
+                                        </div>
+                                        <textarea id="extra-@student.StudentID" class="form-control border bg-light small flex-grow-1" rows="3" placeholder="Enter extracurricular feedback or click Suggestions...">@extracurricularText</textarea>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <span class="badge bg-white text-dark shadow-sm px-3 rounded-pill">Class 3-A</span>
+                    }
+                }
+                else
+                {
+                    <div class="text-center py-5 text-muted bg-light rounded-4 border-0">
+                        <div class="py-5">
+                            <i class="fas fa-filter fa-4x mb-3 text-light"></i>
+                            <p class="fs-5 fw-bold text-dark">No student records matching your selection.</p>
+                            <p class="small text-muted">Select Class and Section and click Filter View.</p>
+                        </div>
                     </div>
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <div class="p-3 bg-white rounded-3 shadow-sm h-100">
-                                <label class="fw-bold text-success small mb-1"><i class="fas fa-book me-2"></i>Academic Feedback</label>
-                                <p class="small mb-0 text-muted italic">"Excellent reading skills. Zoya is one of the top performers in English Language."</p>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="p-3 bg-white rounded-3 shadow-sm h-100">
-                                <label class="fw-bold text-info small mb-1"><i class="fas fa-smile me-2"></i>Behavioral Feedback</label>
-                                <p class="small mb-0 text-muted italic">"Very active in class discussions. Highly recommended for class leadership roles."</p>
-                            </div>
-                        </div>
-                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Suggestions Modal -->
+<div class="modal fade" id="suggestionsModal" tabindex="-1" aria-labelledby="suggestionsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 15px;">
+            <div class="modal-header bg-light border-0 py-3">
+                <h5 class="modal-title fw-bold" id="suggestionsModalLabel">
+                    <i class="fas fa-lightbulb me-2 text-warning"></i>Predefined Statement Suggestions
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="text-muted small mb-3">Click on a statement below to append it to the student's feedback box.</p>
+                <div class="input-group mb-3">
+                    <input type="text" id="modalSearch" class="form-control border-0 bg-light" placeholder="Search statements..." oninput="filterModalSuggestions()">
+                    <span class="input-group-text border-0 bg-light"><i class="fas fa-search"></i></span>
+                </div>
+                <div class="list-group rounded-3 border-0 shadow-none overflow-auto" style="max-height: 350px;" id="modalSuggestionsList">
+                    <!-- Dynamic -->
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Anti-forgery tokens for ajax calls -->
+@Html.AntiForgeryToken()
+
 <style>
     .italic { font-style: italic; }
+    .bg-soft-primary { background-color: rgba(13, 110, 253, 0.1); }
+    .rounded-4 { border-radius: 1rem !important; }
+    .small { font-size: 0.875rem !important; }
+    .student-card { transition: all 0.2s ease-in-out; }
+    .student-card:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.05) !important; }
+    .form-control:focus { box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.15) !important; border-color: #dc3545 !important; }
 </style>
+
+<script>
+    // Serialize Statement Bank to Javascript
+    const statementBank = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(statementBank));
+    let activeTextareaId = "";
+
+    function showSuggestions(studentId, category, textareaId) {
+        activeTextareaId = textareaId;
+        const listContainer = document.getElementById("modalSuggestionsList");
+        listContainer.innerHTML = "";
+        
+        // Update modal title
+        document.getElementById("suggestionsModalLabel").innerHTML = `<i class="fas fa-lightbulb me-2 text-warning"></i>${category} Suggestions`;
+        document.getElementById("modalSearch").value = "";
+
+        const filtered = statementBank.filter(s => s.Category === category);
+
+        if (filtered.length === 0) {
+            listContainer.innerHTML = `
+                <div class="text-center py-4 text-muted bg-light rounded-3">
+                    <i class="fas fa-info-circle fa-2x mb-2 text-light"></i>
+                    <p class="mb-0 small">No pre-defined statements found for category "${category}".</p>
+                    <p class="mb-0 small text-muted">You can add statements under the "Manage Statements" page.</p>
+                </div>
+            `;
+        } else {
+            filtered.forEach(s => {
+                const item = document.createElement("button");
+                item.className = "list-group-item list-group-item-action border-bottom border-0 py-3 modal-suggestion-item";
+                item.setAttribute("type", "button");
+                item.setAttribute("data-text", s.StatementText);
+                item.onclick = function() {
+                    insertText(s.StatementText);
+                };
+                item.innerHTML = `
+                    <div class="d-flex w-100 justify-content-between align-items-center">
+                        <div class="small text-dark text-start pe-3">${s.StatementText}</div>
+                        <i class="fas fa-plus-circle text-muted"></i>
+                    </div>
+                `;
+                listContainer.appendChild(item);
+            });
+        }
+
+        const modal = new bootstrap.Modal(document.getElementById('suggestionsModal'));
+        modal.show();
+    }
+
+    function filterModalSuggestions() {
+        const query = document.getElementById("modalSearch").value.toLowerCase().trim();
+        const items = document.querySelectorAll(".modal-suggestion-item");
+        
+        items.forEach(item => {
+            const text = item.getAttribute("data-text").toLowerCase();
+            if (text.includes(query)) {
+                item.style.display = "";
+            } else {
+                item.style.display = "none";
+            }
+        });
+    }
+
+    function insertText(text) {
+        const txtarea = document.getElementById(activeTextareaId);
+        if (txtarea) {
+            const currentVal = txtarea.value.trim();
+            if (currentVal.length > 0) {
+                txtarea.value = currentVal + " " + text;
+            } else {
+                txtarea.value = text;
+            }
+            // Trigger change event to highlight unsaved changes
+            txtarea.classList.add("border-warning");
+        }
+        
+        // Hide modal
+        const modalEl = document.getElementById('suggestionsModal');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+    }
+
+    // Save individual student feedback
+    function saveFeedback(studentId, isBatch = false) {
+        const card = document.querySelector(`.student-card[data-student-id="${studentId}"]`);
+        const saveBtn = card.querySelector(".btn-save-feedback");
+        
+        // Extract inputs
+        const academic = document.getElementById(`academic-${studentId}`).value;
+        const behavioral = document.getElementById(`behavioral-${studentId}`).value;
+        const extracurricular = document.getElementById(`extra-${studentId}`).value;
+        
+        const session = "@ViewBag.SelectedSession";
+        const term = "@ViewBag.SelectedTerm";
+        const className = "@ViewBag.SelectedClass";
+        const section = "@ViewBag.SelectedSection";
+
+        if (!isBatch) {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+        }
+
+        // Get anti-forgery token
+        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+        return $.ajax({
+            url: '@Url.Action("SaveStudentFeedback", "Primary")',
+            type: 'POST',
+            data: {
+                __RequestVerificationToken: token,
+                studentId: studentId,
+                session: session,
+                className: className,
+                section: section,
+                term: term,
+                academicFeedback: academic,
+                behavioralFeedback: behavioral,
+                extracurricularFeedback: extracurricular
+            },
+            success: function (response) {
+                if (response.success) {
+                    // Reset input borders
+                    document.getElementById(`academic-${studentId}`).classList.remove("border-warning");
+                    document.getElementById(`behavioral-${studentId}`).classList.remove("border-warning");
+                    document.getElementById(`extra-${studentId}`).classList.remove("border-warning");
+
+                    if (!isBatch) {
+                        saveBtn.innerHTML = '<i class="fas fa-check-circle me-1"></i>Saved';
+                        saveBtn.className = "btn btn-outline-success btn-sm rounded-pill px-3 shadow-sm";
+                        setTimeout(() => {
+                            saveBtn.disabled = false;
+                            saveBtn.innerHTML = '<i class="fas fa-save me-1"></i>Save';
+                            saveBtn.className = "btn btn-success btn-sm rounded-pill px-3 shadow-sm";
+                        }, 2000);
+                        showToast("Feedback Saved", `${card.querySelector("h6").innerText.split("Roll No")[0]} feedback updated successfully!`, "success");
+                    }
+                } else {
+                    if (!isBatch) {
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = '<i class="fas fa-save me-1"></i>Save';
+                        showToast("Error", response.message || "Failed to save feedback.", "danger");
+                    }
+                }
+            },
+            error: function () {
+                if (!isBatch) {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<i class="fas fa-save me-1"></i>Save';
+                    showToast("Error", "Network or server error occurred.", "danger");
+                }
+            }
+        });
+    }
+
+    // Save all feedbacks sequentially
+    async function saveAllFeedbacks() {
+        const cards = document.querySelectorAll(".student-card");
+        const saveAllBtn = document.getElementById("saveAllBtn");
+        
+        saveAllBtn.disabled = true;
+        saveAllBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Saving All...';
+
+        let successCount = 0;
+
+        for (let i = 0; i < cards.length; i++) {
+            const studentId = cards[i].getAttribute("data-student-id");
+            try {
+                await saveFeedback(studentId, true);
+                successCount++;
+            } catch (err) {
+                console.error("Error saving for student ID: " + studentId, err);
+            }
+        }
+
+        saveAllBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>All Saved';
+        saveAllBtn.className = "btn btn-success btn-sm rounded-pill shadow-sm px-3";
+        showToast("Batch Save Complete", `Successfully updated feedback for ${successCount} out of ${cards.length} students.`, "success");
+
+        setTimeout(() => {
+            saveAllBtn.disabled = false;
+            saveAllBtn.innerHTML = '<i class="fas fa-save me-2"></i>Save All Changes';
+            saveAllBtn.className = "btn btn-danger btn-sm rounded-pill shadow-sm px-3";
+        }, 3000);
+    }
+
+    function showToast(title, body, type = "success") {
+        const container = document.getElementById("toastContainer");
+        const toast = document.createElement("div");
+        toast.className = `toast align-items-center text-white bg-${type} border-0 show m-2`;
+        toast.setAttribute("role", "alert");
+        toast.setAttribute("aria-live", "assertive");
+        toast.setAttribute("aria-atomic", "true");
+        toast.style.borderRadius = "10px";
+        
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body small">
+                    <strong>${title}</strong><br>${body}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+        
+        container.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.classList.remove("show");
+            setTimeout(() => toast.remove(), 500);
+        }, 4000);
+    }
+
+    // Highlight textareas that have unsaved manual edits
+    document.addEventListener("input", function (e) {
+        if (e.target.tagName === "TEXTAREA" && e.target.id.includes("-")) {
+            e.target.classList.add("border-warning");
+        }
+    });
+</script>

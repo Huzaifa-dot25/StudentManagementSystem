@@ -27,6 +27,8 @@ namespace StudentManagementSystem.Data
         public DbSet<TeacherAssignment> TeacherAssignments { get; set; }
         public DbSet<AiConversation> AiConversations { get; set; }
         public DbSet<AiChatMessageEntity> AiChatMessages { get; set; }
+        public DbSet<DescriptiveStatement> DescriptiveStatements { get; set; }
+        public DbSet<StudentFeedback> StudentFeedbacks { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
